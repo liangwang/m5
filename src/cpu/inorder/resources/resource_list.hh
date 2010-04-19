@@ -44,4 +44,7 @@
 #include "cpu/inorder/resources/agen_unit.hh"
 #include "cpu/inorder/resources/mult_div_unit.hh"
 
+/** Resources added for light weighted OO implementation */
+#include "cpu/inorder/resources/mat_unit.hh"
+
 #endif
