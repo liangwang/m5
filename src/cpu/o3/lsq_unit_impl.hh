@@ -129,7 +129,7 @@ LSQUnit<Impl>::LSQUnit()
 template<class Impl>
 void
 LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
-        LSQ *lsq_ptr, unsigned maxLQEntries, unsigned maxSQEntries,
+        LSQ *lsq_ptr, unsigned maxLQEntries, unsigned maxSQEntries, unsigned maxMATEntries,
         unsigned id)
 {
     cpu = cpu_ptr;
@@ -153,6 +153,12 @@ LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
     loadHead = loadTail = 0;
 
     storeHead = storeWBIdx = storeTail = 0;
+
+	// Make sure maxMATEntries is a power of two
+	assert(!(maxMATEntries & (maxMATEntries-1)));
+	// MAT do NOT need sentinel entry
+	MATEntries = maxMATEntries;
+	memAliasTable.resize(MATEntries);
 
     usedPorts = 0;
     cachePorts = params->cachePorts;
@@ -248,6 +254,14 @@ LSQUnit<Impl>::clearSQ()
 
 template<class Impl>
 void
+LSQUnit<Impl>::clearMAT()
+{
+    memAliasTable.clear();
+}
+
+
+template<class Impl>
+void
 LSQUnit<Impl>::switchOut()
 {
     switchedOut = true;
@@ -314,6 +328,22 @@ LSQUnit<Impl>::resizeSQ(unsigned size)
     } else {
         SQEntries = size_plus_sentinel;
     }
+}
+
+template<class Impl>
+void
+LSQUnit<Impl>::resizeMAT(unsigned size)
+{
+	if (size > MATEntries) {
+		while (size > memAliasTable.size()) {
+			MATEntry dummy;
+			memAliasTable.push_back(dummy);
+			MATEntries++;
+		}
+	} else {
+		MATEntries = size;
+	}
+
 }
 
 template <class Impl>
@@ -454,36 +484,39 @@ LSQUnit<Impl>::executeLoad(DynInstPtr &inst)
         iewStage->activityThisCycle();
     } else if (!loadBlocked()) {
         assert(inst->effAddrValid);
-        int load_idx = inst->lqIdx;
-        incrLdIdx(load_idx);
-        while (load_idx != loadTail) {
-            // Really only need to check loads that have actually executed
 
-            // @todo: For now this is extra conservative, detecting a
-            // violation if the addresses match assuming all accesses
-            // are quad word accesses.
-
-            // @todo: Fix this, magic number being used here
-            if (loadQueue[load_idx]->effAddrValid &&
-                (loadQueue[load_idx]->effAddr >> 8) ==
-                (inst->effAddr >> 8)) {
-                // A load incorrectly passed this load.  Squash and refetch.
-                // For now return a fault to show that it was unsuccessful.
-                DynInstPtr violator = loadQueue[load_idx];
-                if (!memDepViolator ||
-                    (violator->seqNum < memDepViolator->seqNum)) {
-                    memDepViolator = violator;
-                } else {
-                    break;
-                }
-
-                ++lsqMemOrderViolation;
-
-                return genMachineCheckFault();
-            }
-
-            incrLdIdx(load_idx);
-        }
+        matExecuteLoad(inst);
+		
+//        int load_idx = inst->lqIdx;
+//        incrLdIdx(load_idx);
+//        while (load_idx != loadTail) {
+//            // Really only need to check loads that have actually executed
+//
+//            // @todo: For now this is extra conservative, detecting a
+//            // violation if the addresses match assuming all accesses
+//            // are quad word accesses.
+//
+//            // @todo: Fix this, magic number being used here
+//            if (loadQueue[load_idx]->effAddrValid &&
+//                (loadQueue[load_idx]->effAddr >> 8) ==
+//                (inst->effAddr >> 8)) {
+//                // A load incorrectly passed this load.  Squash and refetch.
+//                // For now return a fault to show that it was unsuccessful.
+//                DynInstPtr violator = loadQueue[load_idx];
+//                if (!memDepViolator ||
+//                    (violator->seqNum < memDepViolator->seqNum)) {
+//                    memDepViolator = violator;
+//                } else {
+//                    break;
+//                }
+//
+//                ++lsqMemOrderViolation;
+//
+//                return genMachineCheckFault();
+//            }
+//
+//            incrLdIdx(load_idx);
+        
     }
 
     return load_fault;
@@ -509,14 +542,14 @@ LSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
     int load_idx = store_inst->lqIdx;
 
     Fault store_fault = store_inst->initiateAcc();
-
+/*
     if (storeQueue[store_idx].size == 0) {
         DPRINTF(LSQUnit,"Fault on Store PC %#x, [sn:%lli],Size = 0\n",
                 store_inst->readPC(),store_inst->seqNum);
 
         return store_fault;
     }
-
+*/
     assert(store_fault == NoFault);
 
     if (store_inst->isStoreConditional()) {
@@ -527,6 +560,7 @@ LSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
         ++storesToWB;
     }
 
+/*
     assert(store_inst->effAddrValid);
     while (load_idx != loadTail) {
         // Really only need to check loads that have actually executed
@@ -558,12 +592,12 @@ LSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
 
         incrLdIdx(load_idx);
     }
-
+*/
     return store_fault;
 }
 
 template <class Impl>
-void
+bool
 LSQUnit<Impl>::commitLoad()
 {
     assert(loadQueue[loadHead]);
@@ -571,11 +605,21 @@ LSQUnit<Impl>::commitLoad()
     DPRINTF(LSQUnit, "Committing head load instruction, PC %#x\n",
             loadQueue[loadHead]->readPC());
 
+	DynInstPtr inst = loadQueue[loadHead];
+	if (!matCommitLoad(inst)) {
+		memDepViolator = inst;
+	}
+
     loadQueue[loadHead] = NULL;
 
     incrLdIdx(loadHead);
 
     --loads;
+	
+	if (memDepViolator)
+		return false;
+	else
+		return true;
 }
 
 template <class Impl>
@@ -585,7 +629,8 @@ LSQUnit<Impl>::commitLoads(InstSeqNum &youngest_inst)
     assert(loads == 0 || loadQueue[loadHead]);
 
     while (loads != 0 && loadQueue[loadHead]->seqNum <= youngest_inst) {
-        commitLoad();
+        if (!commitLoad())
+			break;
     }
 }
 
@@ -601,16 +646,20 @@ LSQUnit<Impl>::commitStores(InstSeqNum &youngest_inst)
         assert(storeQueue[store_idx].inst);
         // Mark any stores that are now committed and have not yet
         // been marked as able to write back.
+		
         if (!storeQueue[store_idx].canWB) {
-            if (storeQueue[store_idx].inst->seqNum > youngest_inst) {
+            if (storeQueue[store_idx].inst->seqNum > youngest_inst || 
+				storeQueue[store_idx].inst->seqNum > loadQueue[loadHead]->seqNum) {
                 break;
             }
             DPRINTF(LSQUnit, "Marking store as able to write back, PC "
                     "%#x [sn:%lli]\n",
                     storeQueue[store_idx].inst->readPC(),
                     storeQueue[store_idx].inst->seqNum);
-
+			
             storeQueue[store_idx].canWB = true;
+		
+			matCommitStore(storeQueue[store_idx].inst);
 
             ++storesToWB;
         }
@@ -921,6 +970,10 @@ LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
         decrStIdx(store_idx);
         ++lsqSquashedStores;
     }
+
+	/** All MAT entries are reset */
+	memAliasTable.clear();
+	memAliasTable.resize(MATEntries);
 }
 
 template <class Impl>
@@ -1146,3 +1199,43 @@ LSQUnit<Impl>::dumpInsts()
 
     cprintf("\n");
 }
+
+template <class Impl>
+void
+LSQUnit<Impl>::matExecuteLoad(DynInstPtr inst)
+{
+	assert(inst->effAddrValid);
+	int matIdx = getMatIdx(inst);
+	memAliasTable[matIdx].counter ++;
+}
+
+template <class Impl>
+bool
+LSQUnit<Impl>::matCommitLoad(DynInstPtr inst)
+{
+	int matIdx = getMatIdx(inst);
+	memAliasTable[matIdx].counter --;
+	if (memAliasTable[matIdx].violation)
+		return false;
+	else
+		return true;
+}
+
+
+template <class Impl>
+void
+LSQUnit<Impl>::matCommitStore(DynInstPtr inst)
+{
+	int matIdx = getMatIdx(inst);
+	if (memAliasTable[matIdx].counter != 0)
+		memAliasTable[matIdx].violation = 1;
+}
+
+template <class Impl>
+int
+LSQUnit<Impl>::getMatIdx(inst)
+{
+	assert(inst->effAddrValid);
+	return ((inst->effAddr) >> 3) & (MATEntries-1);
+}
+

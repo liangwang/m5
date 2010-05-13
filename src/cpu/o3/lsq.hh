@@ -356,11 +356,15 @@ class LSQ {
     /** Total Size of SQ Entries. */
     unsigned SQEntries;
 
+	unsigned MATEntries;
+
     /** Max LQ Size - Used to Enforce Sharing Policies. */
     unsigned maxLQEntries;
 
     /** Max SQ Size - Used to Enforce Sharing Policies. */
     unsigned maxSQEntries;
+
+	unsigned maxMATEntries;
 
     /** Number of Threads. */
     ThreadID numThreads;

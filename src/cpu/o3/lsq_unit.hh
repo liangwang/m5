@@ -78,7 +78,7 @@ class LSQUnit {
 
     /** Initializes the LSQ unit with the specified number of entries. */
     void init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
-            LSQ *lsq_ptr, unsigned maxLQEntries, unsigned maxSQEntries,
+            LSQ *lsq_ptr, unsigned maxLQEntries, unsigned maxSQEntries, unsigned maxMATEntries,
             unsigned id);
 
     /** Returns the name of the LSQ unit. */
@@ -121,7 +121,8 @@ class LSQUnit {
     Fault executeStore(DynInstPtr &inst);
 
     /** Commits the head load. */
-    void commitLoad();
+    //void commitLoad();
+    bool commitLoad();
     /** Commits loads older than a specific sequence number. */
     void commitLoads(InstSeqNum &youngest_inst);
 
@@ -141,11 +142,17 @@ class LSQUnit {
     /** Clears all the entries in the SQ. */
     void clearSQ();
 
+	/** Clears all the entries in the MAT. */
+    void clearMAT();
+
     /** Resizes the LQ to a given size. */
     void resizeLQ(unsigned size);
 
     /** Resizes the SQ to a given size. */
     void resizeSQ(unsigned size);
+
+    /** Resizes the SQ to a given size. */
+    void resizeMAT(unsigned size);	
 
     /** Squashes all instructions younger than a specific sequence number. */
     void squash(const InstSeqNum &squashed_num);
@@ -211,6 +218,10 @@ class LSQUnit {
 
     /** Handles doing the retry. */
     void recvRetry();
+
+	void matExecuteLoad(DynInstPtr inst);
+	bool matCommitLoad(DynInstPtr inst);
+	void matCommitStore(DynInstPtr inst);
 
   private:
     /** Writes back the instruction, sending it to IEW. */
@@ -349,6 +360,25 @@ class LSQUnit {
         bool completed;
     };
 
+  struct MATEntry {
+	  /** Constructs an empty MAT entry. */
+	  MATEntry()
+		  : counter(0), violated(false)
+	  { }
+  
+	  /** Constructs a MAT entry for a given instruction. */
+	  MATEntry(int _counter, bool _violated)
+		  : counter(_counter), violated(_violated)
+	  { }
+
+	  /** counter to record the number of load */
+	  int counter;
+
+	  /** flag to indicate whether memory violation occured */
+	  bool violated;
+  };
+
+
   private:
     /** The LSQUnit thread id. */
     ThreadID lsqID;
@@ -359,6 +389,9 @@ class LSQUnit {
     /** The load queue. */
     std::vector<DynInstPtr> loadQueue;
 
+	/** The memory alias table. */
+	std::vector<MATEntry> memAliasTable;
+
     /** The number of LQ entries, plus a sentinel entry (circular queue).
      *  @todo: Consider having var that records the true number of LQ entries.
      */
@@ -367,6 +400,10 @@ class LSQUnit {
      *  @todo: Consider having var that records the true number of SQ entries.
      */
     unsigned SQEntries;
+
+	/** The number of MAT entries, no sentinel entry is included. */
+	unsigned MATEntries;
+	
 
     /** The number of load instructions in the LQ. */
     int loads;
