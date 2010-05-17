@@ -247,8 +247,7 @@ InstructionQueue<Impl>::regStats()
         .init(0,totalWidth,1)
         .name(name() + ".ISSUE:issued_per_cycle")
         .desc("Number of insts issued each cycle")
-        .flags(pdf)
-        ;
+        .flags(pdf);
 /*
     dist_unissued
         .init(Num_OpClasses+2)
@@ -264,8 +263,7 @@ InstructionQueue<Impl>::regStats()
         .init(numThreads,Enums::Num_OpClass)
         .name(name() + ".ISSUE:FU_type")
         .desc("Type of FU issued")
-        .flags(total | pdf | dist)
-        ;
+        .flags(total | pdf | dist);
     statIssuedInstType.ysubnames(Enums::OpClassStrings);
 
     //
