@@ -165,7 +165,7 @@ class InstructionQueue
     bool hasReadyInsts();
 
     /** Inserts a new instruction into the IQ. */
-    void insert(DynInstPtr &new_inst);
+    bool insert(DynInstPtr &new_inst);
 
     /** Inserts a new, non-speculative instruction into the IQ. */
     void insertNonSpec(DynInstPtr &new_inst);

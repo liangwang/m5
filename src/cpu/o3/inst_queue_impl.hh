@@ -496,12 +496,22 @@ InstructionQueue<Impl>::hasReadyInsts()
 }
 
 template <class Impl>
-void
+bool
 InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
 {
     // Make sure the instruction is valid
     assert(new_inst);
 
+	bool return_val = true;
+	
+	// Look through its source registers (physical regs), and mark any
+	// dependencies.
+    if (!addToDependents(new_inst)) {
+		return_val = false;
+		DPRINTF(IQ, "instruction [sn:%lli] is over-subscribed.\n", new_inst->seqNum);
+		return return_val;
+    }
+	
     DPRINTF(IQ, "Adding instruction [sn:%lli] PC %#x to the IQ.\n",
             new_inst->seqNum, new_inst->readPC());
 
@@ -511,11 +521,7 @@ InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
 
     --freeEntries;
 
-    new_inst->setInIQ();
-
-    // Look through its source registers (physical regs), and mark any
-    // dependencies.
-    addToDependents(new_inst);
+    new_inst->setInIQ();    
 
     // Have this instruction set itself as the producer of its destination
     // register(s).
@@ -1147,11 +1153,15 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
                         "is being added to the dependency chain.\n",
                         new_inst->readPC(), src_reg);
 
-                dependGraph.insert(src_reg, new_inst);
+				if (!dependGraph.overSubscribe(src_reg)){
+				dependGraph.insert(src_reg, new_inst);
 
                 // Change the return value to indicate that something
                 // was added to the dependency graph.
                 return_val = true;
+				} else {
+				return_val = false;
+				}
             } else {
                 DPRINTF(IQ, "Instruction PC %#x has src reg %i that "
                         "became ready before it reached the IQ.\n",
@@ -1174,6 +1184,8 @@ InstructionQueue<Impl>::addToProducers(DynInstPtr &new_inst)
     // to the producing instruction will be placed in the head node of
     // the dependency links.
     int8_t total_dest_regs = new_inst->numDestRegs();
+
+	assert(total_dest_regs < 2); // support insructions have more than 2 destination registers
 
     for (int dest_reg_idx = 0;
          dest_reg_idx < total_dest_regs;

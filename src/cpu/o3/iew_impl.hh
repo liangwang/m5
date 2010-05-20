@@ -1029,6 +1029,35 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
             break;
         }
 
+		//Check for over subscribed
+         if (inst->isLoad()) {
+            add_to_iq = true;
+        } else if (inst->isStore()) {
+            if (inst->isStoreConditional()) {
+                add_to_iq = false;
+            } else {
+                add_to_iq = true;
+            }
+        } else if (inst->isMemBarrier() || inst->isWriteBarrier()) {
+            add_to_iq = false;
+        } else if (inst->isNop()) {
+            add_to_iq = false;
+        } else if (inst->isExecuted()) {
+            add_to_iq = false;
+        } else {
+            add_to_iq = true;
+        }
+        if (inst->isNonSpeculative()) {
+            add_to_iq = false;
+        }
+        if (add_to_iq) {
+            if (!instQueue.insert(inst)) {
+				block(tid);
+				toRename->iewUnblock[tid] = false;
+				break;
+            }
+        }		
+
         // Otherwise issue the instruction just fine.
         if (inst->isLoad()) {
             DPRINTF(IEW, "[tid:%i]: Issue: Memory instruction "
@@ -1114,10 +1143,12 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
         }
 
         // If the instruction queue is not full, then add the
-        // instruction.
+        // instruction. (moved ahead)
+        /*
         if (add_to_iq) {
             instQueue.insert(inst);
         }
+        */
 
         insts_to_dispatch.pop();
 
