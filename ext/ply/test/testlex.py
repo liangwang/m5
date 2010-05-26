@@ -34,7 +34,7 @@ def run_import(module):
     code = "import "+module
     exec(code)
     del sys.modules[module]
-
+    
 # Tests related to errors and warnings when building lexers
 class LexErrorWarningTests(unittest.TestCase):
     def setUp(self):
@@ -52,14 +52,14 @@ class LexErrorWarningTests(unittest.TestCase):
         self.assertRaises(SyntaxError,run_import,"lex_dup1")
         result = sys.stderr.getvalue()
         self.assert_(check_expected(result,
-                                    "lex_dup1.py:20: Rule t_NUMBER redefined. Previously defined on line 18\n" ))
-
+                                    "lex_dup1.py:20: Rule t_NUMBER redefined. Previously defined on line 18\n" ))        
+        
     def test_lex_dup2(self):
         self.assertRaises(SyntaxError,run_import,"lex_dup2")
         result = sys.stderr.getvalue()
         self.assert_(check_expected(result,
                                     "lex_dup2.py:22: Rule t_NUMBER redefined. Previously defined on line 18\n" ))
-
+            
     def test_lex_dup3(self):
         self.assertRaises(SyntaxError,run_import,"lex_dup3")
         result = sys.stderr.getvalue()
@@ -186,7 +186,7 @@ class LexErrorWarningTests(unittest.TestCase):
         run_import("lex_state_noerror")
         result = sys.stderr.getvalue()
         self.assert_(check_expected(result,
-                                    "No error rule is defined for exclusive state 'comment'\n"))
+                                    "No error rule is defined for exclusive state 'comment'\n"))    
 
     def test_lex_state_norule(self):
         self.assertRaises(SyntaxError,run_import,"lex_state_norule")
@@ -213,7 +213,7 @@ class LexErrorWarningTests(unittest.TestCase):
                                     "Rule 't_PLUS' defined for an unspecified token PLUS\n"
                                     "Rule 't_MINUS' defined for an unspecified token MINUS\n"
 ))
-
+    
     def test_lex_token3(self):
         self.assertRaises(SyntaxError,run_import,"lex_token3")
         result = sys.stderr.getvalue()
@@ -239,9 +239,9 @@ class LexErrorWarningTests(unittest.TestCase):
         run_import("lex_token_dup")
         result = sys.stderr.getvalue()
         self.assert_(check_expected(result,
-                                    "Token 'MINUS' multiply defined\n"))
+                                    "Token 'MINUS' multiply defined\n"))   
 
-
+        
     def test_lex_literal1(self):
         self.assertRaises(SyntaxError,run_import,"lex_literal1")
         result = sys.stderr.getvalue()
@@ -278,7 +278,7 @@ class LexBuildOptionTests(unittest.TestCase):
                                     "(NUMBER,3,1,0)\n"
                                     "(PLUS,'+',1,1)\n"
                                     "(NUMBER,4,1,2)\n"))
-
+        
     def test_lex_object(self):
         run_import("lex_object")
         result = sys.stdout.getvalue()
@@ -405,7 +405,7 @@ class LexBuildOptionTests(unittest.TestCase):
             shutil.rmtree("lexdir")
         except OSError:
             pass
-
+        
         os.mkdir("lexdir")
         os.mkdir("lexdir/sub")
         open("lexdir/__init__.py","w").write("")
@@ -545,7 +545,7 @@ class LexBuildOptionTests(unittest.TestCase):
             os.remove("manytab.pyo")
         except OSError:
             pass
-
+        
 # Tests related to run-time behavior of lexers
 class LexRunTests(unittest.TestCase):
     def setUp(self):
@@ -562,7 +562,7 @@ class LexRunTests(unittest.TestCase):
                                     "(H_EDIT_DESCRIPTOR,'abc',1,0)\n"
                                     "(H_EDIT_DESCRIPTOR,'abcdefghij',1,6)\n"
                                     "(H_EDIT_DESCRIPTOR,'xy',1,20)\n"))
-
+       
     def test_lex_state_try(self):
         run_import("lex_state_try")
         result = sys.stdout.getvalue()
@@ -574,7 +574,7 @@ class LexRunTests(unittest.TestCase):
                                     "comment body LexToken(body_part,'This is a comment */',1,9)\n"
                                     "(PLUS,'+',1,30)\n"
                                     "(NUMBER,'10',1,32)\n"
-                                    ))
+                                    ))    
 
 
 

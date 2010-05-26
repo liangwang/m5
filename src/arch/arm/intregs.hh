@@ -104,7 +104,7 @@ enum IntRegIndex
     NUM_ARCH_INTREGS = INTREG_PC + 1,
 
     /* All the aliased indexes. */
-
+    
     /* USR mode */
     INTREG_R0_USR = INTREG_R0,
     INTREG_R1_USR = INTREG_R1,

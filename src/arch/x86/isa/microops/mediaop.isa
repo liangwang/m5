@@ -270,7 +270,7 @@ let {{
             if ext is None:
                 self.ext = 0
             else:
-                self.ext = ext
+                self.ext = ext 
 
         def getAllocator(self, *microFlags):
             className = self.className
@@ -947,7 +947,7 @@ let {{
                 uint64_t arg1Bits = bits(FpSrcReg1.uqw, hiIndex, loIndex);
                 uint64_t arg2Bits = bits(FpSrcReg2.uqw, hiIndex, loIndex);
                 uint64_t resBits = arg1Bits + arg2Bits;
-
+                
                 if (ext & 0x2) {
                     if (signedOp()) {
                         int arg1Sign = bits(arg1Bits, sizeBits - 1);
@@ -984,7 +984,7 @@ let {{
                 uint64_t arg1Bits = bits(FpSrcReg1.uqw, hiIndex, loIndex);
                 uint64_t arg2Bits = bits(FpSrcReg2.uqw, hiIndex, loIndex);
                 uint64_t resBits = arg1Bits - arg2Bits;
-
+                
                 if (ext & 0x2) {
                     if (signedOp()) {
                         int arg1Sign = bits(arg1Bits, sizeBits - 1);
@@ -1046,7 +1046,7 @@ let {{
 
                 if (ext & 0x4)
                     resBits += (ULL(1) << (destBits - 1));
-
+                
                 if (multHi())
                     resBits >>= destBits;
 
@@ -1071,7 +1071,7 @@ let {{
                 uint64_t arg1Bits = bits(FpSrcReg1.uqw, hiIndex, loIndex);
                 uint64_t arg2Bits = bits(FpSrcReg2.uqw, hiIndex, loIndex);
                 uint64_t resBits = (arg1Bits + arg2Bits + 1) / 2;
-
+                
                 result = insertBits(result, hiIndex, loIndex, resBits);
             }
             FpDestReg.uqw = result;
@@ -1294,7 +1294,8 @@ let {{
                 int srcLoIndex = srcStart + (i + 0) * srcSizeBits;
                 uint64_t argBits = bits(FpSrcReg1.uqw, srcHiIndex, srcLoIndex);
 
-                int64_t sArg = argBits | (0 - (argBits & (ULL(1) << srcHiIndex)));
+                int64_t sArg = argBits |
+                    (0 - (argBits & (ULL(1) << (srcSizeBits - 1))));
                 double arg = sArg;
 
                 if (destSize == 4) {

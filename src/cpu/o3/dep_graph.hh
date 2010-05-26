@@ -154,28 +154,28 @@ template <class DynInstPtr>
 void
 DependencyGraph<DynInstPtr>::reset()
 {
-  // Clear the dependency graph
-  DepEntry *curr;
-  DepEntry *prev;
+    // Clear the dependency graph
+    DepEntry *curr;
+    DepEntry *prev;
 
-  for (int i = 0; i < numEntries; ++i) {
-      curr = dependGraph[i].next;
+    for (int i = 0; i < numEntries; ++i) {
+        curr = dependGraph[i].next;
 
-      while (curr) {
-          memAllocCounter--;
+        while (curr) {
+            memAllocCounter--;
 
-          prev = curr;
-          curr = prev->next;
-          prev->inst = NULL;
+            prev = curr;
+            curr = prev->next;
+            prev->inst = NULL;
 
-          delete prev;
-      }
+            delete prev;
+        }
 
-      if (dependGraph[i].inst) {
-          dependGraph[i].inst = NULL;
-      }
+        if (dependGraph[i].inst) {
+            dependGraph[i].inst = NULL;
+        }
 
-      dependGraph[i].next = NULL;
+        dependGraph[i].next = NULL;
 
       numSubscribers[i] = 0;
   }

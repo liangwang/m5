@@ -79,7 +79,7 @@ parser.add_option("--l2_size", type="string", default="1MB")
 parser.add_option("--l1d_assoc", type="int", default=2)
 parser.add_option("--l1i_assoc", type="int", default=2)
 parser.add_option("--l2_assoc", type="int", default=16)
-
+ 
 # ruby host memory experimentation
 parser.add_option("--map_levels", type="int")
 

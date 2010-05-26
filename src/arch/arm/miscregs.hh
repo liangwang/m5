@@ -71,7 +71,7 @@ namespace ArmISA
     };
 
     const char * const miscRegName[NUM_MISCREGS] = {
-        "cpsr", "spsr", "spsr_fiq", "spsr_irq", "spsr_svc", "spsr_und",
+        "cpsr", "spsr", "spsr_fiq", "spsr_irq", "spsr_svc", "spsr_und", 
         "spsr_abt", "fpsr", "fpsid", "fpscr", "fpexc", "sctlr"
     };
 
@@ -100,7 +100,7 @@ namespace ArmISA
     BitUnion32(SCTLR)
         Bitfield<30> te;  // Thumb Exception Enable
         Bitfield<29> afe; // Access flag enable
-        Bitfield<28> tre; // TEX Remap bit
+        Bitfield<28> tre; // TEX Remap bit 
         Bitfield<27> nmfi;// Non-maskable fast interrupts enable
         Bitfield<25> ee;  // Exception Endianness bit
         Bitfield<24> ve;  // Interrupt vectors enable
@@ -116,10 +116,10 @@ namespace ArmISA
         Bitfield<11> z;   // branch prediction enable bit
         Bitfield<10> sw;  // Enable swp/swpb
         Bitfield<6,3> rao4;// Read as one
-        Bitfield<7>  b;   // Endianness support (unused)
+        Bitfield<7>  b;   // Endianness support (unused)  
         Bitfield<2>  c;   // Cache enable bit
         Bitfield<1>  a;   // Alignment fault checking
-        Bitfield<0>  m;   // MMU enable bit
+        Bitfield<0>  m;   // MMU enable bit 
     EndBitUnion(SCTLR)
 };
 

@@ -61,8 +61,8 @@ while 1:
          elif stat[0] == 'NEW':
              b.new()
 
-
-
+  
+            
 
 
 

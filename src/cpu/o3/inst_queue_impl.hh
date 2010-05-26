@@ -264,7 +264,8 @@ InstructionQueue<Impl>::regStats()
         .init(numThreads,Enums::Num_OpClass)
         .name(name() + ".ISSUE:FU_type")
         .desc("Type of FU issued")
-        .flags(total | pdf | dist);
+        .flags(total | pdf | dist)
+        ;
     statIssuedInstType.ysubnames(Enums::OpClassStrings);
 
     //
@@ -522,7 +523,11 @@ InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
 
     --freeEntries;
 
-    new_inst->setInIQ();    
+    new_inst->setInIQ();
+
+    // Look through its source registers (physical regs), and mark any
+    // dependencies.
+    addToDependents(new_inst);
 
     // Have this instruction set itself as the producer of its destination
     // register(s).
@@ -1140,7 +1145,7 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
     for (int src_reg_idx = 0;
          src_reg_idx < total_src_regs;
          src_reg_idx++)
-      {
+    {
         // Only add it to the dependency graph if it's not ready.
         if (!new_inst->isReadySrcRegIdx(src_reg_idx)) {
             PhysRegIndex src_reg = new_inst->renamedSrcRegIdx(src_reg_idx);
@@ -1173,7 +1178,7 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
                 new_inst->markSrcRegReady(src_reg_idx);
             }
         }
-      }
+    }
 
     return return_val;
 }

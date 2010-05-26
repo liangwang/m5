@@ -73,7 +73,7 @@ AlphaLiveProcess::argsInit(int intSize, int pageSize)
     ElfObject * elfObject = dynamic_cast<ElfObject *>(objFile);
     if(elfObject)
     {
-        // modern glibc uses a bunch of auxiliary vectors to set up
+        // modern glibc uses a bunch of auxiliary vectors to set up 
         // TLS as well as do a bunch of other stuff
         // these vectors go on the bottom of the stack, below argc/argv/envp
         // pointers but above actual arg strings
@@ -109,10 +109,10 @@ AlphaLiveProcess::argsInit(int intSize, int pageSize)
     }
 
     int space_needed =
-        argv_array_size +
-        envp_array_size +
+        argv_array_size + 
+        envp_array_size + 
         auxv_array_size +
-        arg_data_size +
+        arg_data_size + 
         env_data_size;
 
     if (space_needed < 32*1024)

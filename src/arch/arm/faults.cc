@@ -38,38 +38,38 @@
 namespace ArmISA
 {
 
-template<> ArmFaultBase::FaultVals ArmFault<Reset>::vals =
+template<> ArmFaultBase::FaultVals ArmFault<Reset>::vals = 
     {"reset", 0x00, MODE_SVC, 0, 0, true, true};
 
-template<> ArmFaultBase::FaultVals ArmFault<UndefinedInstruction>::vals =
+template<> ArmFaultBase::FaultVals ArmFault<UndefinedInstruction>::vals = 
     {"Undefined Instruction", 0x04, MODE_UNDEFINED, 4 ,2, false, false} ;
 
-template<> ArmFaultBase::FaultVals ArmFault<SupervisorCall>::vals =
+template<> ArmFaultBase::FaultVals ArmFault<SupervisorCall>::vals = 
     {"Supervisor Call", 0x08, MODE_SVC, 4, 2, false, false};
 
-template<> ArmFaultBase::FaultVals ArmFault<PrefetchAbort>::vals =
+template<> ArmFaultBase::FaultVals ArmFault<PrefetchAbort>::vals = 
     {"Prefetch Abort", 0x0C, MODE_ABORT, 4, 4, true, false};
 
-template<> ArmFaultBase::FaultVals ArmFault<DataAbort>::vals =
+template<> ArmFaultBase::FaultVals ArmFault<DataAbort>::vals = 
     {"Data Abort", 0x10, MODE_ABORT, 8, 8, true, false};
 
-template<> ArmFaultBase::FaultVals ArmFault<Interrupt>::vals =
+template<> ArmFaultBase::FaultVals ArmFault<Interrupt>::vals = 
     {"IRQ", 0x18, MODE_IRQ, 4, 4, true, false};
 
-template<> ArmFaultBase::FaultVals ArmFault<FastInterrupt>::vals =
+template<> ArmFaultBase::FaultVals ArmFault<FastInterrupt>::vals = 
     {"FIQ", 0x1C, MODE_FIQ, 4, 4, true, true};
 
-Addr
+Addr 
 ArmFaultBase::getVector(ThreadContext *tc)
 {
     // ARM ARM B1-3
 
     SCTLR sctlr = tc->readMiscReg(MISCREG_SCTLR);
-
+    
     // panic if SCTLR.VE because I have no idea what to do with vectored
     // interrupts
     assert(!sctlr.ve);
-
+    
     if (!sctlr.v)
         return offset();
     return offset() + HighVecs;
@@ -78,7 +78,7 @@ ArmFaultBase::getVector(ThreadContext *tc)
 
 #if FULL_SYSTEM
 
-void
+void 
 ArmFaultBase::invoke(ThreadContext *tc)
 {
     // ARM ARM B1.6.3
@@ -87,21 +87,21 @@ ArmFaultBase::invoke(ThreadContext *tc)
 
     SCTLR sctlr = tc->readMiscReg(MISCREG_SCTLR);
     CPSR cpsr = tc->readMiscReg(MISCREG_CPSR);
-    CPSR saved_cpsr = tc->readMiscReg(MISCREG_CPSR) |
+    CPSR saved_cpsr = tc->readMiscReg(MISCREG_CPSR) | 
                       tc->readIntReg(INTREG_CONDCODES);
-
+ 
 
     cpsr.mode = nextMode();
     cpsr.it1 = cpsr.it2 = 0;
     cpsr.j = 0;
-
+   
     if (sctlr.te)
        cpsr.t = 1;
     cpsr.a = cpsr.a | abortDisable();
     cpsr.f = cpsr.f | fiqDisable();
     cpsr.i = 1;
     tc->setMiscReg(MISCREG_CPSR, cpsr);
-    tc->setIntReg(INTREG_LR, tc->readPC() +
+    tc->setIntReg(INTREG_LR, tc->readPC() + 
             (saved_cpsr.t ? thumbPcOffset() : armPcOffset()));
 
     switch (nextMode()) {
@@ -122,10 +122,10 @@ ArmFaultBase::invoke(ThreadContext *tc)
         break;
       default:
         panic("unknown Mode\n");
-    }
-
+    } 
+   
     DPRINTF(Faults, "Invoking Fault: %s cpsr: %#x PC: %#x lr: %#x\n", name(), cpsr,
-            tc->readPC(), tc->readIntReg(INTREG_LR));
+            tc->readPC(), tc->readIntReg(INTREG_LR)); 
     tc->setPC(getVector(tc));
     tc->setNextPC(getVector(tc) + cpsr.t ? 2 : 4 );
 }

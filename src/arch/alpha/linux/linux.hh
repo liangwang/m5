@@ -126,7 +126,7 @@ class AlphaLinux : public Linux
         TGT_RLIMIT_MEMLOCK = 9,
         TGT_RLIMIT_LOCKS = 10
     };
-
+   
     typedef struct {
        int64_t  uptime;    /* Seconds since boot */
        uint64_t loads[3];  /* 1, 5, and 15 minute load averages */

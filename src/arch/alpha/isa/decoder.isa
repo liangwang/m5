@@ -355,7 +355,7 @@ decode OPCODE default Unknown::unknown() {
                              for (int i = 0; i < 8; ++i) {
                                  uint8_t ra_ub = Ra.uq<hi:lo>;
                                  uint8_t rb_ub = Rb.uq<hi:lo>;
-                                 temp += (ra_ub >= rb_ub) ?
+                                 temp += (ra_ub >= rb_ub) ? 
                                          (ra_ub - rb_ub) : (rb_ub - ra_ub);
                                  hi += 8;
                                  lo += 8;
@@ -384,34 +384,34 @@ decode OPCODE default Unknown::unknown() {
                              if (!(temp<7:0>)) { temp >>= 8; count += 8; }
                              if (!(temp<3:0>)) { temp >>= 4; count += 4; }
                              if (!(temp<1:0>)) { temp >>= 2; count += 2; }
-                             if (!(temp<0:0> & ULL(0x1))) {
-                                 temp >>= 1; count += 1;
+                             if (!(temp<0:0> & ULL(0x1))) { 
+                                 temp >>= 1; count += 1; 
                              }
                              if (!(temp<0:0> & ULL(0x1))) count += 1;
                              Rc = count;
                            }}, IntAluOp);
 
 
-            0x34: unpkbw({{
-                             Rc = (Rb.uq<7:0>
-                                   | (Rb.uq<15:8> << 16)
-                                   | (Rb.uq<23:16> << 32)
-                                   | (Rb.uq<31:24> << 48));
+            0x34: unpkbw({{ 
+                             Rc = (Rb.uq<7:0> 
+                                   | (Rb.uq<15:8> << 16) 
+                                   | (Rb.uq<23:16> << 32) 
+                                   | (Rb.uq<31:24> << 48)); 
                            }}, IntAluOp);
 
             0x35: unpkbl({{
-                             Rc = (Rb.uq<7:0> | (Rb.uq<15:8> << 32));
+                             Rc = (Rb.uq<7:0> | (Rb.uq<15:8> << 32)); 
                            }}, IntAluOp);
 
             0x36: pkwb({{
-                             Rc = (Rb.uq<7:0>
-                                   | (Rb.uq<23:16> << 8)
-                                   | (Rb.uq<39:32> << 16)
-                                   | (Rb.uq<55:48> << 24));
+                             Rc = (Rb.uq<7:0> 
+                                   | (Rb.uq<23:16> << 8) 
+                                   | (Rb.uq<39:32> << 16) 
+                                   | (Rb.uq<55:48> << 24)); 
                            }}, IntAluOp);
 
             0x37: pklb({{
-                             Rc = (Rb.uq<7:0> | (Rb.uq<39:32> << 8));
+                             Rc = (Rb.uq<7:0> | (Rb.uq<39:32> << 8)); 
                            }}, IntAluOp);
 
             0x38: minsb8({{
@@ -421,7 +421,7 @@ decode OPCODE default Unknown::unknown() {
                              for (int i = 7; i >= 0; --i) {
                                  int8_t ra_sb = Ra.uq<hi:lo>;
                                  int8_t rb_sb = Rb.uq<hi:lo>;
-                                 temp = ((temp << 8)
+                                 temp = ((temp << 8) 
                                          | ((ra_sb < rb_sb) ? Ra.uq<hi:lo>
                                                           : Rb.uq<hi:lo>));
                                  hi -= 8;
@@ -437,7 +437,7 @@ decode OPCODE default Unknown::unknown() {
                              for (int i = 3; i >= 0; --i) {
                                  int16_t ra_sw = Ra.uq<hi:lo>;
                                  int16_t rb_sw = Rb.uq<hi:lo>;
-                                 temp = ((temp << 16)
+                                 temp = ((temp << 16) 
                                          | ((ra_sw < rb_sw) ? Ra.uq<hi:lo>
                                                           : Rb.uq<hi:lo>));
                                  hi -= 16;
@@ -453,7 +453,7 @@ decode OPCODE default Unknown::unknown() {
                              for (int i = 7; i >= 0; --i) {
                                  uint8_t ra_ub = Ra.uq<hi:lo>;
                                  uint8_t rb_ub = Rb.uq<hi:lo>;
-                                 temp = ((temp << 8)
+                                 temp = ((temp << 8) 
                                          | ((ra_ub < rb_ub) ? Ra.uq<hi:lo>
                                                           : Rb.uq<hi:lo>));
                                  hi -= 8;
@@ -469,7 +469,7 @@ decode OPCODE default Unknown::unknown() {
                              for (int i = 3; i >= 0; --i) {
                                  uint16_t ra_sw = Ra.uq<hi:lo>;
                                  uint16_t rb_sw = Rb.uq<hi:lo>;
-                                 temp = ((temp << 16)
+                                 temp = ((temp << 16) 
                                          | ((ra_sw < rb_sw) ? Ra.uq<hi:lo>
                                                           : Rb.uq<hi:lo>));
                                  hi -= 16;
@@ -485,7 +485,7 @@ decode OPCODE default Unknown::unknown() {
                              for (int i = 7; i >= 0; --i) {
                                  uint8_t ra_ub = Ra.uq<hi:lo>;
                                  uint8_t rb_ub = Rb.uq<hi:lo>;
-                                 temp = ((temp << 8)
+                                 temp = ((temp << 8) 
                                          | ((ra_ub > rb_ub) ? Ra.uq<hi:lo>
                                                           : Rb.uq<hi:lo>));
                                  hi -= 8;
@@ -501,7 +501,7 @@ decode OPCODE default Unknown::unknown() {
                              for (int i = 3; i >= 0; --i) {
                                  uint16_t ra_uw = Ra.uq<hi:lo>;
                                  uint16_t rb_uw = Rb.uq<hi:lo>;
-                                 temp = ((temp << 16)
+                                 temp = ((temp << 16) 
                                          | ((ra_uw > rb_uw) ? Ra.uq<hi:lo>
                                                           : Rb.uq<hi:lo>));
                                  hi -= 16;
@@ -517,7 +517,7 @@ decode OPCODE default Unknown::unknown() {
                              for (int i = 7; i >= 0; --i) {
                                  int8_t ra_sb = Ra.uq<hi:lo>;
                                  int8_t rb_sb = Rb.uq<hi:lo>;
-                                 temp = ((temp << 8)
+                                 temp = ((temp << 8) 
                                          | ((ra_sb > rb_sb) ? Ra.uq<hi:lo>
                                                           : Rb.uq<hi:lo>));
                                  hi -= 8;
@@ -533,7 +533,7 @@ decode OPCODE default Unknown::unknown() {
                              for (int i = 3; i >= 0; --i) {
                                  int16_t ra_sw = Ra.uq<hi:lo>;
                                  int16_t rb_sw = Rb.uq<hi:lo>;
-                                 temp = ((temp << 16)
+                                 temp = ((temp << 16) 
                                          | ((ra_sw > rb_sw) ? Ra.uq<hi:lo>
                                                           : Rb.uq<hi:lo>));
                                  hi -= 16;

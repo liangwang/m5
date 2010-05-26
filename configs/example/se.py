@@ -133,7 +133,7 @@ if options.detailed or options.inorder:
             process += [smt_process, ]
             smt_idx += 1
     numThreads = len(workloads)
-
+    
 (CPUClass, test_mem_mode, FutureClass) = Simulation.setCPUClass(options)
 
 CPUClass.clock = '2GHz'

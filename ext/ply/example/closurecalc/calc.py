@@ -2,7 +2,7 @@
 # calc.py
 #
 # A calculator parser that makes use of closures. The function make_calculator()
-# returns a function that accepts an input string and returns a result.  All
+# returns a function that accepts an input string and returns a result.  All 
 # lexing rules, parsing rules, and internal state are held inside the function.
 # -----------------------------------------------------------------------------
 
@@ -42,11 +42,11 @@ def make_calculator():
     def t_newline(t):
         r'\n+'
         t.lexer.lineno += t.value.count("\n")
-
+    
     def t_error(t):
         print("Illegal character '%s'" % t.value[0])
         t.lexer.skip(1)
-
+    
     # Build the lexer
     lexer = lex.lex()
 
@@ -107,8 +107,8 @@ def make_calculator():
     # Build the parser
     parser = yacc.yacc()
 
-    # ------- Input function
-
+    # ------- Input function 
+    
     def input(text):
         result = parser.parse(text,lexer=lexer)
         return result
@@ -127,4 +127,4 @@ while True:
     if r:
         print(r)
 
-
+    

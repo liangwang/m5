@@ -162,7 +162,7 @@ class ArmLinux : public Linux
         uint32_t freehigh;  /* Available high memory size */
         uint32_t mem_unit;  /* Memory unit size in bytes */
     } tgt_sysinfo;
-
+   
 
 };
 

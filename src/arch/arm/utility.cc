@@ -40,9 +40,9 @@ void
 initCPU(ThreadContext *tc, int cpuId)
 {
     // Reset CP15?? What does that mean -- ali
-
+    
     // FPEXC.EN = 0
-
+    
     static Fault reset = new Reset;
     if (cpuId == 0)
         reset->invoke(tc);
@@ -57,17 +57,17 @@ uint64_t getArgument(ThreadContext *tc, int number, bool fp) {
 #endif
 }
 
-Fault
+Fault 
 setCp15Register(uint32_t &Rd, int CRn, int opc1, int CRm, int opc2)
 {
-   return new UnimpFault(csprintf("MCR CP15: CRn: %d opc1: %d CRm: %d opc1: %d\n",
-               CRn, opc1, CRm, opc2));
+   return new UnimpFault(csprintf("MCR CP15: CRn: %d opc1: %d CRm: %d opc1: %d\n", 
+               CRn, opc1, CRm, opc2));     
 }
 
-Fault
+Fault 
 readCp15Register(uint32_t &Rd, int CRn, int opc1, int CRm, int opc2)
 {
-   return new UnimpFault(csprintf("MRC CP15: CRn: %d opc1: %d CRm: %d opc1: %d\n",
+   return new UnimpFault(csprintf("MRC CP15: CRn: %d opc1: %d CRm: %d opc1: %d\n", 
            CRn, opc1, CRm, opc2));
 
 }

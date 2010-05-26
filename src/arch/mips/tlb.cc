@@ -322,7 +322,7 @@ TLB::translateInst(RequestPtr req, ThreadContext *tc)
         // Address will not be translated through TLB, set response, and go!
         req->setPaddr(KSeg02Phys(req->getVaddr()));
     } else {
-      /*
+      /* 
        * This is an optimization - smallPages is updated every time a TLB
        * operation is performed. That way, we don't need to look at
        * Config3 _ SP and PageGrain _ ESP every time we do a TLB lookup
@@ -443,7 +443,7 @@ TLB::translateData(RequestPtr req, ThreadContext *tc, bool write)
       // Address will not be translated through TLB, set response, and go!
       req->setPaddr(KSeg02Phys(req->getVaddr()));
     } else {
-        /*
+        /* 
          * This is an optimization - smallPages is updated every time a TLB
          * operation is performed. That way, we don't need to look at
          * Config3 _ SP and PageGrain _ ESP every time we do a TLB lookup

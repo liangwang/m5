@@ -63,7 +63,7 @@ class BasicInterpreter:
                   else:
                        print("FOR WITHOUT NEXT AT LINE %s" % self.stat[pc])
                        self.error = 1
-
+                  
     # Evaluate an expression
     def eval(self,expr):
         etype = expr[0]
@@ -199,7 +199,7 @@ class BasicInterpreter:
         while 1:
             line  = self.stat[self.pc]
             instr = self.prog[line]
-
+            
             op = instr[0]
 
             # END and STOP statements
@@ -226,11 +226,11 @@ class BasicInterpreter:
                           out += str(eval)
                  sys.stdout.write(out)
                  end = instr[2]
-                 if not (end == ',' or end == ';'):
+                 if not (end == ',' or end == ';'): 
                      sys.stdout.write("\n")
                  if end == ',': sys.stdout.write(" "*(15-(len(out) % 15)))
                  if end == ';': sys.stdout.write(" "*(3-(len(out) % 3)))
-
+                     
             # LET statement
             elif op == 'LET':
                  target = instr[1]
@@ -259,7 +259,7 @@ class BasicInterpreter:
                  initval = instr[2]
                  finval  = instr[3]
                  stepval = instr[4]
-
+              
                  # Check to see if this is a new loop
                  if not self.loops or self.loops[-1][0] != self.pc:
                         # Looks like a new loop. Make the initial assignment
@@ -287,7 +287,7 @@ class BasicInterpreter:
                  if not self.loops:
                        print("NEXT WITHOUT FOR AT LINE %s" % line)
                        return
-
+ 
                  nextvar = instr[1]
                  self.pc = self.loops[-1][0]
                  loopinst = self.prog[self.stat[self.pc]]
@@ -334,7 +334,7 @@ class BasicInterpreter:
                               v.append(temp[:])
                           self.tables[vname] = v
 
-            self.pc += 1
+            self.pc += 1         
 
     # Utility functions for program listing
     def expr_str(self,expr):
@@ -412,7 +412,7 @@ class BasicInterpreter:
                                _out += "%s(%d)" % (vname,x)
                          else:
                                _out += "%s(%d,%d)" % (vname,x,y)
-
+                         
                    print(_out)
              elif op == 'DATA':
                    _out = "%s DATA " % line
@@ -426,7 +426,7 @@ class BasicInterpreter:
     # Erase the current program
     def new(self):
          self.prog = {}
-
+ 
     # Insert statements
     def add_statements(self,prog):
          for line,stat in prog.items():

@@ -44,7 +44,7 @@ class ArmSystem : public System
     typedef ArmSystemParams Params;
     ArmSystem(Params *p);
     ~ArmSystem();
-
+    
     virtual Addr fixFuncEventAddr(Addr addr)
     {
         //XXX This may eventually have to do something useful.

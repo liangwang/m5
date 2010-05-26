@@ -81,7 +81,7 @@ def template DataImmDecode {{
 }};
 
 let {{
-
+ 
      calcCcCode = '''
         if (%(canOverflow)s){
            cprintf("canOverflow: %%d\\n", Rd < resTemp);
@@ -92,7 +92,7 @@ let {{
             _iz = (resTemp == 0);
             _iv = %(ivValue)s & 1;
             _ic = %(icValue)s & 1;
-
+            
             CondCodes =  _in << 31 | _iz << 30 | _ic << 29 | _iv << 28 |
                 (CondCodes & 0x0FFFFFFF);
 
@@ -118,7 +118,7 @@ let {{
             iv = 'CondCodes<28:>'
             negBit = 63
         elif flagtype == "overflow":
-            canOverflow = "true"
+            canOverflow = "true" 
             icReg = icImm = iv = '0'
         elif flagtype == "add":
             icReg = icImm = 'findCarry(32, resTemp, Rn, op2)'
@@ -133,12 +133,12 @@ let {{
             icReg = 'shift_carry_rs(Rm, Rs<7:0>, shift, CondCodes<29:>)'
             icImm = 'shift_carry_imm(Rm, shift_size, shift, CondCodes<29:>)'
             iv = 'CondCodes<28:>'
-        return (calcCcCode % {"icValue" : icReg,
-                              "ivValue" : iv,
+        return (calcCcCode % {"icValue" : icReg, 
+                              "ivValue" : iv, 
                               "negBit" : negBit,
                               "canOverflow" : canOverflow },
-               calcCcCode % {"icValue" : icImm,
-                              "ivValue" : iv,
+               calcCcCode % {"icValue" : icImm, 
+                              "ivValue" : iv, 
                               "negBit" : negBit,
                               "canOverflow" : canOverflow })
 
@@ -155,7 +155,7 @@ let {{
             negBit = 63
         elif flagtype == "overflow":
             icVaule = ivValue = '0'
-            canOverflow = "true"
+            canOverflow = "true" 
         elif flagtype == "add":
             icValue = 'findCarry(32, resTemp, Rn, rotated_imm)'
             ivValue = 'findOverflow(32, resTemp, Rn, rotated_imm)'

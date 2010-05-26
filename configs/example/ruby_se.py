@@ -75,7 +75,7 @@ parser.add_option("--l2_size", type="string", default="1MB")
 parser.add_option("--l1d_assoc", type="int", default=2)
 parser.add_option("--l1i_assoc", type="int", default=2)
 parser.add_option("--l2_assoc", type="int", default=16)
-
+ 
 execfile(os.path.join(config_root, "common", "Options.py"))
 
 (options, args) = parser.parse_args()
@@ -140,7 +140,7 @@ if options.detailed:
 (CPUClass, test_mem_mode, FutureClass) = Simulation.setCPUClass(options)
 
 #
-# Currently ruby only works in timing mode
+# Currently ruby only works in timing mode 
 #
 assert(options.timing)
 assert(test_mem_mode == 'timing')

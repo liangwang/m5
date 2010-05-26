@@ -206,7 +206,7 @@ decode OPCODE_HI default Unknown::unknown() {
                 0x0: decode FUNCTION_LO {
                     format IntOp {
                         0x0: add({{
-                            /* More complicated since an ADD can cause
+                            /* More complicated since an ADD can cause 
                                an arithmetic overflow exception */
                             int64_t Src1 = Rs.sw;
                             int64_t Src2 = Rt.sw;
@@ -235,7 +235,7 @@ decode OPCODE_HI default Unknown::unknown() {
                             int64_t Src2 = Rt.sw;
                             int64_t temp_result = Src1 - Src2;
 #if  FULL_SYSTEM
-                            if (bits(temp_result, 31) ==
+                            if (bits(temp_result, 31) == 
                                 bits(temp_result, 32)) {
 #endif
                                 Rd.sw = temp_result;
@@ -403,7 +403,7 @@ decode OPCODE_HI default Unknown::unknown() {
                                 Rt &= 0xFFFFE7FF;
                         }
                     }});
-                    0x4: mtc0({{
+                    0x4: mtc0({{ 
                         CP0_RD_SEL = Rt;
                         CauseReg cause = Cause;
                         IntCtlReg intCtl = IntCtl;
@@ -1283,7 +1283,7 @@ decode OPCODE_HI default Unknown::unknown() {
                     0x3: CP1Unimpl::unknown();
                     0x7: CP1Unimpl::unknown();
 
-                    //Table A-16 MIPS32 COP1 Encoding of Function
+                    //Table A-16 MIPS32 COP1 Encoding of Function 
                     //Field When rs=W
                     0x4: decode FUNCTION {
                         format FloatConvertOp {
@@ -1913,7 +1913,7 @@ decode OPCODE_HI default Unknown::unknown() {
                             }});
                             0x7: precr_sra_r_ph_w({{
                                 Rt.uw = dspPrecrSra(Rt.uw, Rs.uw, RD,
-                                                    SIMD_FMT_W, ROUND);
+                                                    SIMD_FMT_W, ROUND); 
                             }});
                         }
                     }

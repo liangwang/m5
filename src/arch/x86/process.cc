@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2007 The Hewlett-Packard Development Company
+ * All rights reserved.
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 2003-2006 The Regents of The University of Michigan
  * All rights reserved.
  *
@@ -27,63 +39,6 @@
  *
  * Authors: Gabe Black
  *          Ali Saidi
- */
-
-/*
- * Copyright (c) 2007 The Hewlett-Packard Development Company
- * All rights reserved.
- *
- * Redistribution and use of this software in source and binary forms,
- * with or without modification, are permitted provided that the
- * following conditions are met:
- *
- * The software must be used only for Non-Commercial Use which means any
- * use which is NOT directed to receiving any direct monetary
- * compensation for, or commercial advantage from such use.  Illustrative
- * examples of non-commercial use are academic research, personal study,
- * teaching, education and corporate research & development.
- * Illustrative examples of commercial use are distributing products for
- * commercial advantage and providing services using the software for
- * commercial advantage.
- *
- * If you wish to use this software or functionality therein that may be
- * covered by patents for commercial use, please contact:
- *     Director of Intellectual Property Licensing
- *     Office of Strategy and Technology
- *     Hewlett-Packard Company
- *     1501 Page Mill Road
- *     Palo Alto, California  94304
- *
- * Redistributions of source code must retain the above copyright notice,
- * this list of conditions and the following disclaimer.  Redistributions
- * in binary form must reproduce the above copyright notice, this list of
- * conditions and the following disclaimer in the documentation and/or
- * other materials provided with the distribution.  Neither the name of
- * the COPYRIGHT HOLDER(s), HEWLETT-PACKARD COMPANY, nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.  No right of
- * sublicense is granted herewith.  Derivatives of the software and
- * output created using the software may be prepared, but only for
- * Non-Commercial Uses.  Derivatives of the software may be shared with
- * others provided: (i) the others agree to abide by the list of
- * conditions herein which includes the Non-Commercial Use restrictions;
- * and (ii) such Derivatives of the software include the above copyright
- * notice to acknowledge the contribution from this software where
- * applicable, this list of conditions and the disclaimer below.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/x86/isa_traits.hh"
@@ -550,7 +505,11 @@ X86LiveProcess::argsInit(int pageSize,
         auxv.push_back(auxv_t(M5_AT_EGID, egid()));
         //Whether to enable "secure mode" in the executable
         auxv.push_back(auxv_t(M5_AT_SECURE, 0));
-        //The string "x86_64" with unknown meaning
+        //The address of 16 "random" bytes.
+        auxv.push_back(auxv_t(M5_AT_RANDOM, 0));
+        //The name of the program
+        auxv.push_back(auxv_t(M5_AT_EXECFN, 0));
+        //The platform string
         auxv.push_back(auxv_t(M5_AT_PLATFORM, 0));
     }
 
@@ -563,8 +522,11 @@ X86LiveProcess::argsInit(int pageSize,
     //It's purpose is to let the user space linker examine the original file.
     int file_name_size = filename.size() + 1;
 
+    const int numRandomBytes = 16;
+    int aux_data_size = numRandomBytes;
+
     string platform = "x86_64";
-    int aux_data_size = platform.size() + 1;
+    aux_data_size += platform.size() + 1;
 
     int env_data_size = 0;
     for (int i = 0; i < envp.size(); ++i) {
@@ -657,9 +619,13 @@ X86LiveProcess::argsInit(int pageSize,
     //Write the file name
     initVirtMem->writeString(file_name_base, filename.c_str());
 
-    //Fix up the aux vector which points to the "platform" string
-    assert(auxv[auxv.size() - 1].a_type = M5_AT_PLATFORM);
-    auxv[auxv.size() - 1].a_val = aux_data_base;
+    //Fix up the aux vectors which point to data
+    assert(auxv[auxv.size() - 3].a_type == M5_AT_RANDOM);
+    auxv[auxv.size() - 3].a_val = aux_data_base;
+    assert(auxv[auxv.size() - 2].a_type == M5_AT_EXECFN);
+    auxv[auxv.size() - 2].a_val = argv_array_base;
+    assert(auxv[auxv.size() - 1].a_type == M5_AT_PLATFORM);
+    auxv[auxv.size() - 1].a_val = aux_data_base + numRandomBytes;
 
     //Copy the aux stuff
     for(int x = 0; x < auxv.size(); x++)
@@ -701,6 +667,8 @@ void
 X86_64LiveProcess::argsInit(int intSize, int pageSize)
 {
     std::vector<AuxVector<uint64_t> > extraAuxvs;
+    extraAuxvs.push_back(AuxVector<uint64_t>(M5_AT_SYSINFO_EHDR,
+                vsyscallPage.base));
     X86LiveProcess::argsInit<uint64_t>(pageSize, extraAuxvs);
 }
 
@@ -709,9 +677,10 @@ I386LiveProcess::argsInit(int intSize, int pageSize)
 {
     std::vector<AuxVector<uint32_t> > extraAuxvs;
     //Tell the binary where the vsyscall part of the vsyscall page is.
-    extraAuxvs.push_back(AuxVector<uint32_t>(0x20,
+    extraAuxvs.push_back(AuxVector<uint32_t>(M5_AT_SYSINFO,
                 vsyscallPage.base + vsyscallPage.vsyscallOffset));
-    extraAuxvs.push_back(AuxVector<uint32_t>(0x21, vsyscallPage.base));
+    extraAuxvs.push_back(AuxVector<uint32_t>(M5_AT_SYSINFO_EHDR,
+                vsyscallPage.base));
     X86LiveProcess::argsInit<uint32_t>(pageSize, extraAuxvs);
 }
 

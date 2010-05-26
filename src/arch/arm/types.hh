@@ -93,9 +93,9 @@ namespace ArmISA
         Bitfield<3,  0>  immedLo3_0;
 
         Bitfield<15, 0>  regList;
-
+        
         Bitfield<23, 0>  offset;
-
+        
         Bitfield<23, 0>  immed23_0;
 
         Bitfield<11, 8>  cpNum;

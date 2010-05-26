@@ -46,12 +46,12 @@ class L2Cache(RubyCache):
     latency = 15
 
 def create_system(options, phys_mem, piobus, dma_devices):
-
+    
     if buildEnv['PROTOCOL'] != 'MESI_CMP_directory':
         panic("This script requires the MESI_CMP_directory protocol to be built.")
 
     cpu_sequencers = []
-
+    
     #
     # The ruby network creation expects the list of nodes in the system to be
     # consistent with the NetDest list.  Therefore the l1 controller nodes must be
@@ -66,7 +66,7 @@ def create_system(options, phys_mem, piobus, dma_devices):
     # Must create the individual controllers before the network to ensure the
     # controller constructors are called before the network constructor
     #
-
+    
     for i in xrange(options.num_cpus):
         #
         # First create the Ruby objects associated with this cpu
@@ -106,9 +106,9 @@ def create_system(options, phys_mem, piobus, dma_devices):
 
         l2_cntrl = L2Cache_Controller(version = i,
                                       L2cacheMemory = l2_cache)
-
+        
         l2_cntrl_nodes.append(l2_cntrl)
-
+        
     phys_mem_size = long(phys_mem.range.second) - long(phys_mem.range.first) + 1
     mem_module_size = phys_mem_size / options.num_dirs
 
@@ -137,7 +137,7 @@ def create_system(options, phys_mem, piobus, dma_devices):
         dma_seq = DMASequencer(version = i,
                                physMemPort = phys_mem.port,
                                physmem = phys_mem)
-
+        
         dma_cntrl = DMA_Controller(version = i,
                                    dma_sequencer = dma_seq)
 

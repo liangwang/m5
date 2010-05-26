@@ -294,7 +294,7 @@ TLB::translateAtomic(RequestPtr req, ThreadContext *tc, Mode mode)
     }
     panic("MMU translation not implemented\n");
     return NoFault;
-
+    
 
 #endif
 }

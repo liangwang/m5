@@ -659,7 +659,7 @@ LSQUnit<Impl>::commitStores(InstSeqNum &youngest_inst)
 
             storeQueue[store_idx].canWB = true;
 
-                        matCommitStore(storeQueue[store_idx].inst);
+            matCommitStore(storeQueue[store_idx].inst);
 
             ++storesToWB;
         }

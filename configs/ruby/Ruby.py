@@ -43,7 +43,7 @@ def create_system(options, physmem, piobus = None, dma_devices = []):
     except:
         print "Error: could not create sytem for ruby protocol %s" % protocol
         sys.exit(1)
-
+        
     #
     # Important: the topology must be created before the network and after the
     # controllers.
@@ -54,7 +54,7 @@ def create_system(options, physmem, piobus = None, dma_devices = []):
     except:
         print "Error: could not create topology %s" % options.topology
         sys.exit(1)
-
+        
     if options.garnet_network == "fixed":
         network = GarnetNetwork_d(topology = net_topology)
     elif options.garnet_network == "flexible":
@@ -64,7 +64,7 @@ def create_system(options, physmem, piobus = None, dma_devices = []):
 
     #
     # Determine the total memory size of the ruby system and verify it is equal
-    # to physmem.  However, if Ruby memory is using sparse memory in SE
+    # to physmem.  However, if Ruby memory is using sparse memory in SE 
     # mode, then the system should not back-up the memory state with
     # the Memory Vector and thus the memory size bytes should stay at 0.
     #
@@ -75,7 +75,7 @@ def create_system(options, physmem, piobus = None, dma_devices = []):
     assert(total_mem_size.value == physmem_size)
 
     ruby_profiler = RubyProfiler(num_of_sequencers = len(cpu_sequencers))
-
+    
     ruby = RubySystem(clock = options.clock,
                       network = network,
                       profiler = ruby_profiler,

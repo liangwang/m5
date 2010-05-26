@@ -53,7 +53,7 @@ class Parser:
             if not s: continue
             yacc.parse(s)
 
-
+    
 class Calc(Parser):
 
     tokens = (
@@ -89,7 +89,7 @@ class Calc(Parser):
     def t_newline(self, t):
         r'\n+'
         t.lexer.lineno += t.value.count("\n")
-
+    
     def t_error(self, t):
         print("Illegal character '%s'" % t.value[0])
         t.lexer.skip(1)

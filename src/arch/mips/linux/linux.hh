@@ -127,7 +127,7 @@ class MipsLinux : public Linux
     /// assign themselves to process IDs reserved for
     /// the root users.
     static const int NUM_ROOT_PROCS = 2;
-
+   
     typedef struct {
        int32_t  uptime;    /* Seconds since boot */
        uint32_t loads[3];  /* 1, 5, and 15 minute load averages */
@@ -142,7 +142,7 @@ class MipsLinux : public Linux
        uint32_t freehigh;  /* Available high memory size */
        uint32_t mem_unit;  /* Memory unit size in bytes */
     } tgt_sysinfo;
-
+   
 };
 
 #endif

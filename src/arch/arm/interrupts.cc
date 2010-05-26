@@ -29,7 +29,7 @@
  */
 
 #include "arch/arm/interrupts.hh"
-
+    
 ArmISA::Interrupts *
 ArmInterruptsParams::create()
 {

@@ -26,7 +26,7 @@ tokens = reserved + (
     'OR', 'AND', 'NOT', 'XOR', 'LSHIFT', 'RSHIFT',
     'LOR', 'LAND', 'LNOT',
     'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
-
+    
     # Assignment (=, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=)
     'EQUALS', 'TIMESEQUAL', 'DIVEQUAL', 'MODEQUAL', 'PLUSEQUAL', 'MINUSEQUAL',
     'LSHIFTEQUAL','RSHIFTEQUAL', 'ANDEQUAL', 'XOREQUAL', 'OREQUAL',
@@ -39,7 +39,7 @@ tokens = reserved + (
 
     # Conditional operator (?)
     'CONDOP',
-
+    
     # Delimeters ( ) [ ] { } , . ; :
     'LPAREN', 'RPAREN',
     'LBRACKET', 'RBRACKET',
@@ -57,7 +57,7 @@ t_ignore           = ' \t\x0c'
 def t_NEWLINE(t):
     r'\n+'
     t.lexer.lineno += t.value.count("\n")
-
+    
 # Operators
 t_PLUS             = r'\+'
 t_MINUS            = r'-'
@@ -149,16 +149,16 @@ def t_comment(t):
 def t_preprocessor(t):
     r'\#(.)*?\n'
     t.lexer.lineno += 1
-
+    
 def t_error(t):
     print("Illegal character %s" % repr(t.value[0]))
     t.lexer.skip(1)
-
+    
 lexer = lex.lex(optimize=1)
 if __name__ == "__main__":
     lex.runmain(lexer)
 
-
+    
 
 
 

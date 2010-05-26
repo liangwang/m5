@@ -71,7 +71,7 @@ namespace X86ISA
         {
             return ext & MediaScalarOp;
         }
-
+        
         int
         numItems(int size) const
         {

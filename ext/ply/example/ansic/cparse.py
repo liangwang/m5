@@ -778,12 +778,12 @@ def p_unary_expression_5(t):
 def p_unary_expression_6(t):
     'unary_expression : SIZEOF LPAREN type_name RPAREN'
     pass
-
+    
 #unary-operator
 def p_unary_operator(t):
     '''unary_operator : AND
                     | TIMES
-                    | PLUS
+                    | PLUS 
                     | MINUS
                     | NOT
                     | LNOT '''
@@ -837,7 +837,7 @@ def p_argument_expression_list(t):
     pass
 
 # constant:
-def p_constant(t):
+def p_constant(t): 
    '''constant : ICONST
               | FCONST
               | CCONST'''

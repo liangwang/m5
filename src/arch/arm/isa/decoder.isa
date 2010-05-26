@@ -52,9 +52,9 @@ format DataOp {
                         Rd = (uint32_t)(resTemp & 0xffffffff);
                         Rn = (uint32_t)(resTemp >> 32);
                     }}, llbit);
-                    0x5: smlal({{
-                        resTemp = ((int64_t)Rm) * ((int64_t)Rs);
-                        resTemp += (((uint64_t)Rn) << 32) | ((uint64_t)Rd);
+                    0x5: smlal({{ 
+                        resTemp = ((int64_t)Rm) * ((int64_t)Rs); 
+                        resTemp += (((uint64_t)Rn) << 32) | ((uint64_t)Rd); 
                         Rd = (uint32_t)(resTemp & 0xffffffff);
                         Rn = (uint32_t)(resTemp >> 32);
                     }}, llbit);
@@ -168,8 +168,8 @@ format DataOp {
                 }
                 0xa: decode OPCODE {
                     0x8: smlatb({{ Rn = resTemp = sext<16>(Rm<31:16>) * sext<16>(Rs<15:0>) + Rd; }}, overflow);
-                    0x9: smulwb({{
-                        Rn = resTemp = bits(sext<32>(Rm) * sext<16>(Rs<15:0>), 47, 16);
+                    0x9: smulwb({{ 
+                        Rn = resTemp = bits(sext<32>(Rm) * sext<16>(Rs<15:0>), 47, 16); 
                     }}, none);
                     0xa: WarnUnimpl::smlaltb();
                     0xb: smultb({{ Rn = resTemp = sext<16>(Rm<31:16>) * sext<16>(Rs<15:0>); }}, none);
@@ -182,8 +182,8 @@ format DataOp {
                 }
                 0xe: decode OPCODE {
                     0x8: smlatt({{ Rn = resTemp = sext<16>(Rm<31:16>) * sext<16>(Rs<31:16>) + Rd; }}, overflow);
-                    0x9: smulwt({{
-                        Rn = resTemp = bits(sext<32>(Rm) * sext<16>(Rs<31:16>), 47, 16);
+                    0x9: smulwt({{ 
+                        Rn = resTemp = bits(sext<32>(Rm) * sext<16>(Rs<31:16>), 47, 16); 
                     }}, none);
                     0xa: WarnUnimpl::smlaltt();
                     0xb: smultt({{ Rn = resTemp = sext<16>(Rm<31:16>) * sext<16>(Rs<31:16>); }}, none);
@@ -239,7 +239,7 @@ format DataOp {
             }
             0xa: PredOp::movt({{ Rd = IMMED_11_0 << 16 | RN << 28 | Rd<15:0>; }});
             0xb: PredImmOp::msr_i_spsr({{
-                       Spsr = spsrWriteByInstr(Spsr, rotated_imm, RN, false);
+                       Spsr = spsrWriteByInstr(Spsr, rotated_imm, RN, false); 
             }});
         }
     }
@@ -525,26 +525,26 @@ format DataOp {
                             14: WarnUnimpl::cp15_cache_maint5();
                         } // RM
                     } // OPCODE_23_21 CR
-
+                            
                     // Thread ID and context ID registers
                     // Thread ID register needs cheaper access than miscreg
-                    13: WarnUnimpl::mcr_mrc_cp15_c7();
+                    13: WarnUnimpl::mcr_mrc_cp15_c7(); 
 
                     // All the rest
                     default: decode OPCODE_20 {
-                        0: PredOp::mcr_cp15({{
-                               fault = setCp15Register(Rd, RN, OPCODE_23_21, RM, OPC2);
+                        0: PredOp::mcr_cp15({{ 
+                               fault = setCp15Register(Rd, RN, OPCODE_23_21, RM, OPC2); 
                         }});
-                        1: PredOp::mrc_cp15({{
-                               fault = readCp15Register(Rd, RN, OPCODE_23_21, RM, OPC2);
+                        1: PredOp::mrc_cp15({{ 
+                               fault = readCp15Register(Rd, RN, OPCODE_23_21, RM, OPC2); 
                         }});
                     }
-                }  // RN
+                }  // RN 
             } // CPNUM  (OP4 == 1)
         } //OPCODE_4
 
 #if FULL_SYSTEM
-        1: PredOp::swi({{ fault = new SupervisorCall; }}, IsSerializeAfter, IsNonSpeculative, IsSyscall);
+        1: PredOp::swi({{ fault = new SupervisorCall; }}, IsSerializeAfter, IsNonSpeculative, IsSyscall); 
 #else
         1: PredOp::swi({{ if (testPredicate(CondCodes, condCode))
             {

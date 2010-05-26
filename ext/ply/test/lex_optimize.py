@@ -37,11 +37,11 @@ t_ignore = " \t"
 def t_newline(t):
     r'\n+'
     t.lineno += t.value.count("\n")
-
+    
 def t_error(t):
     print("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
-
+    
 # Build the lexer
 lex.lex(optimize=1)
 lex.runmain(data="3+4")

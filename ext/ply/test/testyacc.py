@@ -35,7 +35,7 @@ def run_import(module):
     code = "import "+module
     exec(code)
     del sys.modules[module]
-
+    
 # Tests related to errors and warnings when building parsers
 class YaccErrorWarningTests(unittest.TestCase):
     def setUp(self):
@@ -46,7 +46,7 @@ class YaccErrorWarningTests(unittest.TestCase):
             os.remove("parsetab.pyc")
         except OSError:
             pass
-
+        
     def tearDown(self):
         sys.stderr = sys.__stderr__
         sys.stdout = sys.__stdout__
@@ -56,7 +56,7 @@ class YaccErrorWarningTests(unittest.TestCase):
         self.assert_(check_expected(result,
                                     "yacc_badargs.py:23: Rule 'p_statement_assign' has too many arguments\n"
                                     "yacc_badargs.py:27: Rule 'p_statement_expr' requires an argument\n"
-                                    ))
+                                    ))        
     def test_yacc_badid(self):
         self.assertRaises(ply.yacc.YaccError,run_import,"yacc_badid")
         result = sys.stderr.getvalue()
@@ -88,7 +88,7 @@ class YaccErrorWarningTests(unittest.TestCase):
                                     "Generating LALR tables\n"
 
                                     ))
-
+        
     def test_yacc_badrule(self):
         self.assertRaises(ply.yacc.YaccError,run_import,"yacc_badrule")
         result = sys.stderr.getvalue()
@@ -141,14 +141,14 @@ class YaccErrorWarningTests(unittest.TestCase):
             result = sys.stderr.getvalue()
             self.assert_(check_expected(result,
                                         "'p_error' defined, but is not a function or method\n"))
-
+            
     def test_yacc_error4(self):
         self.assertRaises(ply.yacc.YaccError,run_import,"yacc_error4")
         result = sys.stderr.getvalue()
         self.assert_(check_expected(result,
                                     "yacc_error4.py:62: Illegal rule name 'error'. Already defined as a token\n"
                                     ))
-
+        
     def test_yacc_inf(self):
         self.assertRaises(ply.yacc.YaccError,run_import,"yacc_inf")
         result = sys.stderr.getvalue()
@@ -320,5 +320,5 @@ class YaccErrorWarningTests(unittest.TestCase):
                                     ))
 
 
-
+            
 unittest.main()
