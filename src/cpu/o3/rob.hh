@@ -54,9 +54,6 @@ class ROB
     typedef std::pair<RegIndex, PhysRegIndex> UnmapInfo;
     typedef typename std::list<DynInstPtr>::iterator InstIt;
 
-	//stores the IQ index of consumers
-    typedef std::vector<unsigned> ComsumerList;
-
     /** Possible ROB statuses. */
     enum Status {
         Running,
@@ -69,14 +66,6 @@ class ROB
         Dynamic,
         Partitioned,
         Threshold
-    };
-
-
-    /** ROB entry type */
-    struct ROBEntry{
-        DynInstPtr inst;
-        ComsumerList consumers;
-		bool overSub;
     };
 
   private:
@@ -281,8 +270,7 @@ class ROB
     unsigned maxEntries[Impl::MaxThreads];
 
     /** ROB List of Instructions */
-//    std::list<DynInstPtr> instList[Impl::MaxThreads];
-    std::list<ROBEntry> instList[Impl::MaxThreads];
+    std::list<DynInstPtr> instList[Impl::MaxThreads];
 
     /** Number of instructions that can be squashed in a single cycle. */
     unsigned squashWidth;

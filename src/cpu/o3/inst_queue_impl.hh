@@ -89,6 +89,7 @@ InstructionQueue<Impl>::InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr,
     //Create an entry for each physical register within the
     //dependency graph.
     dependGraph.resize(numPhysRegs);
+    dependGraph.setMaxSubscribers(params->numSubscribers);
 
     // Resize the register scoreboard.
     regScoreboard.resize(numPhysRegs);
@@ -502,14 +503,14 @@ InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
     // Make sure the instruction is valid
     assert(new_inst);
 
-	bool return_val = true;
-	
-	// Look through its source registers (physical regs), and mark any
-	// dependencies.
+    bool return_val = true;
+
+    // Look through its source registers (physical regs), and mark any
+    // dependencies.
     if (!addToDependents(new_inst)) {
-		return_val = false;
-		DPRINTF(IQ, "instruction [sn:%lli] is over-subscribed.\n", new_inst->seqNum);
-		return return_val;
+        return_val = false;
+        DPRINTF(IQ, "instruction [sn:%lli] is over-subscribed.\n", new_inst->seqNum);
+        return return_val;
     }
 	
     DPRINTF(IQ, "Adding instruction [sn:%lli] PC %#x to the IQ.\n",
@@ -538,6 +539,8 @@ InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
     count[new_inst->threadNumber]++;
 
     assert(freeEntries == (numEntries - countInsts()));
+
+    return return_val;
 }
 
 template <class Impl>
@@ -1137,7 +1140,7 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
     for (int src_reg_idx = 0;
          src_reg_idx < total_src_regs;
          src_reg_idx++)
-    {
+      {
         // Only add it to the dependency graph if it's not ready.
         if (!new_inst->isReadySrcRegIdx(src_reg_idx)) {
             PhysRegIndex src_reg = new_inst->renamedSrcRegIdx(src_reg_idx);
@@ -1153,15 +1156,15 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
                         "is being added to the dependency chain.\n",
                         new_inst->readPC(), src_reg);
 
-				if (!dependGraph.overSubscribe(src_reg)){
-				dependGraph.insert(src_reg, new_inst);
+                if (!dependGraph.overSubscribe(src_reg)){
+                    dependGraph.insert(src_reg, new_inst);
 
-                // Change the return value to indicate that something
-                // was added to the dependency graph.
-                return_val = true;
-				} else {
-				return_val = false;
-				}
+                    // Change the return value to indicate that something
+                    // was added to the dependency graph.
+                    return_val = true;
+                } else {
+                    return_val = false;
+                }
             } else {
                 DPRINTF(IQ, "Instruction PC %#x has src reg %i that "
                         "became ready before it reached the IQ.\n",
@@ -1170,7 +1173,7 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
                 new_inst->markSrcRegReady(src_reg_idx);
             }
         }
-    }
+      }
 
     return return_val;
 }
@@ -1185,7 +1188,7 @@ InstructionQueue<Impl>::addToProducers(DynInstPtr &new_inst)
     // the dependency links.
     int8_t total_dest_regs = new_inst->numDestRegs();
 
-	assert(total_dest_regs < 2); // support insructions have more than 2 destination registers
+    assert(total_dest_regs < 2); // support insructions have more than 2 destination registers
 
     for (int dest_reg_idx = 0;
          dest_reg_idx < total_dest_regs;

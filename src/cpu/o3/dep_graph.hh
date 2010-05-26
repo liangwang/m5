@@ -65,7 +65,7 @@ class DependencyGraph
 
     /** Default construction.  Must call resize() prior to use. */
     DependencyGraph()
-        : numEntries(0), memAllocCounter(0), nodesTraversed(0), nodesRemoved(0), numSubscribers(0)
+        : numEntries(0), memAllocCounter(0), nodesTraversed(0), nodesRemoved(0)
     { }
 
     ~DependencyGraph();
@@ -96,8 +96,8 @@ class DependencyGraph
     /** Checks if there are any dependents on a specific register. */
     bool empty(PhysRegIndex idx) { return !dependGraph[idx].next; }
 
-	bool overSubscribe(PhysRegIndex idx);
-	void setMaxSubscribers(int num_subscribers) {maxSubscribers = num_subscribers};
+    inline bool overSubscribe(PhysRegIndex idx);
+    void setMaxSubscribers(int num_subscribers) {maxSubscribers = num_subscribers;}
 
     /** Debugging function to dump out the dependency graph.
      */
@@ -112,12 +112,12 @@ class DependencyGraph
      */
     DepEntry *dependGraph;
 
-	std::vector<int> numSubscribers;
+    std::vector<int> numSubscribers;
 
     /** Number of linked lists; identical to the number of registers. */
     int numEntries;
 
-	int maxSubscribers;
+    int maxSubscribers;
 
     // Debug variable, remove when done testing.
     unsigned memAllocCounter;
@@ -141,66 +141,73 @@ DependencyGraph<DynInstPtr>::resize(int num_entries)
 {
     numEntries = num_entries;
     dependGraph = new DepEntry[numEntries];
-	numSubscribers.resize(num_entries);
-	std::vector<int>::iterator it = numSubscribers.begin();
-	std::vector<int>::iterator eit = numSubscribers.end();
-	while (it != eit) {
-		*it = 0;
-		it ++;
-	}
+        numSubscribers.resize(num_entries);
+        std::vector<int>::iterator it = numSubscribers.begin();
+        std::vector<int>::iterator eit = numSubscribers.end();
+        while (it != eit) {
+                *it = 0;
+                it ++;
+        }
 }
 
 template <class DynInstPtr>
 void
 DependencyGraph<DynInstPtr>::reset()
 {
-    // Clear the dependency graph
-    DepEntry *curr;
-    DepEntry *prev;
+  // Clear the dependency graph
+  DepEntry *curr;
+  DepEntry *prev;
 
-    for (int i = 0; i < numEntries; ++i) {
-        curr = dependGraph[i].next;
+  for (int i = 0; i < numEntries; ++i) {
+      curr = dependGraph[i].next;
 
-        while (curr) {
-            memAllocCounter--;
+      while (curr) {
+          memAllocCounter--;
 
-            prev = curr;
-            curr = prev->next;
-            prev->inst = NULL;
+          prev = curr;
+          curr = prev->next;
+          prev->inst = NULL;
 
-            delete prev;
-        }
+          delete prev;
+      }
 
-        if (dependGraph[i].inst) {
-            dependGraph[i].inst = NULL;
-        }
+      if (dependGraph[i].inst) {
+          dependGraph[i].inst = NULL;
+      }
 
-        dependGraph[i].next = NULL;
+      dependGraph[i].next = NULL;
 
-		numSubscribers[i] = 0;
-    }
+      numSubscribers[i] = 0;
+  }
 }
 
 template <class DynInstPtr>
 void
 DependencyGraph<DynInstPtr>::insert(PhysRegIndex idx, DynInstPtr &new_inst)
 {
-    //Add this new, dependent instruction at the head of the dependency
-    //chain.
+  //Add this new, dependent instruction at the head of the dependency
+  //chain.
 
-    // First create the entry that will be added to the head of the
-    // dependency chain.
-    DepEntry *new_entry = new DepEntry;
-    new_entry->next = dependGraph[idx].next;
-    new_entry->inst = new_inst;
+  // First create the entry that will be added to the head of the
+  // dependency chain.
+  DepEntry *new_entry = new DepEntry;
+  new_entry->next = dependGraph[idx].next;
+  new_entry->inst = new_inst;
 
-    // Then actually add it to the chain.
-    dependGraph[idx].next = new_entry;
+  // Then actually add it to the chain.
+  dependGraph[idx].next = new_entry;
 
-    ++memAllocCounter;
+  ++memAllocCounter;
 
-	numSubscribers[idx] ++;
-	assert(numSubscribers[idx] <= maxSubscribers);
+  numSubscribers[idx] ++;
+  assert(numSubscribers[idx] <= maxSubscribers);
+}
+
+template <class DynInstPtr>
+bool 
+DependencyGraph<DynInstPtr>::overSubscribe(PhysRegIndex idx)
+{
+  return (numSubscribers[idx]==maxSubscribers);
 }
 
 
@@ -241,8 +248,8 @@ DependencyGraph<DynInstPtr>::remove(PhysRegIndex idx,
 
     delete curr;
 
-	assert(numSubscribers[idx] > 0);
-	numSubscribers[idx]--;
+        assert(numSubscribers[idx] > 0);
+        numSubscribers[idx]--;
 }
 
 template <class DynInstPtr>
@@ -259,8 +266,8 @@ DependencyGraph<DynInstPtr>::pop(PhysRegIndex idx)
         memAllocCounter--;
         delete node;
     }
-	assert(numSubscribers[idx] > 0);
-	numSubscribers[idx] --;
+        assert(numSubscribers[idx] > 0);
+        numSubscribers[idx] --;
     return inst;
 }
 

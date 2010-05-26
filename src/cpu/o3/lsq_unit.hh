@@ -142,7 +142,7 @@ class LSQUnit {
     /** Clears all the entries in the SQ. */
     void clearSQ();
 
-	/** Clears all the entries in the MAT. */
+        /** Clears all the entries in the MAT. */
     void clearMAT();
 
     /** Resizes the LQ to a given size. */
@@ -152,7 +152,7 @@ class LSQUnit {
     void resizeSQ(unsigned size);
 
     /** Resizes the SQ to a given size. */
-    void resizeMAT(unsigned size);	
+    void resizeMAT(unsigned size);
 
     /** Squashes all instructions younger than a specific sequence number. */
     void squash(const InstSeqNum &squashed_num);
@@ -219,9 +219,9 @@ class LSQUnit {
     /** Handles doing the retry. */
     void recvRetry();
 
-	void matExecuteLoad(DynInstPtr inst);
-	bool matCommitLoad(DynInstPtr inst);
-	void matCommitStore(DynInstPtr inst);
+    void matExecuteLoad(DynInstPtr inst);
+    bool matCommitLoad(DynInstPtr inst);
+    void matCommitStore(DynInstPtr inst);
 
   private:
     /** Writes back the instruction, sending it to IEW. */
@@ -247,6 +247,8 @@ class LSQUnit {
     inline void incrLdIdx(int &load_idx);
     /** Decrements the given load index (circular queue). */
     inline void decrLdIdx(int &load_idx);
+
+    inline int getMatIdx(DynInstPtr inst);
 
   public:
     /** Debugging function to dump instructions in the LSQ. */
@@ -361,21 +363,21 @@ class LSQUnit {
     };
 
   struct MATEntry {
-	  /** Constructs an empty MAT entry. */
-	  MATEntry()
-		  : counter(0), violated(false)
-	  { }
-  
-	  /** Constructs a MAT entry for a given instruction. */
-	  MATEntry(int _counter, bool _violated)
-		  : counter(_counter), violated(_violated)
-	  { }
+          /** Constructs an empty MAT entry. */
+          MATEntry()
+                  : counter(0), violated(false)
+          { }
 
-	  /** counter to record the number of load */
-	  int counter;
+          /** Constructs a MAT entry for a given instruction. */
+          MATEntry(int _counter, bool _violated)
+                  : counter(_counter), violated(_violated)
+          { }
 
-	  /** flag to indicate whether memory violation occured */
-	  bool violated;
+          /** counter to record the number of load */
+          int counter;
+
+          /** flag to indicate whether memory violation occured */
+          bool violated;
   };
 
 
@@ -389,8 +391,8 @@ class LSQUnit {
     /** The load queue. */
     std::vector<DynInstPtr> loadQueue;
 
-	/** The memory alias table. */
-	std::vector<MATEntry> memAliasTable;
+        /** The memory alias table. */
+        std::vector<MATEntry> memAliasTable;
 
     /** The number of LQ entries, plus a sentinel entry (circular queue).
      *  @todo: Consider having var that records the true number of LQ entries.
@@ -401,9 +403,9 @@ class LSQUnit {
      */
     unsigned SQEntries;
 
-	/** The number of MAT entries, no sentinel entry is included. */
-	unsigned MATEntries;
-	
+        /** The number of MAT entries, no sentinel entry is included. */
+        unsigned MATEntries;
+
 
     /** The number of load instructions in the LQ. */
     int loads;

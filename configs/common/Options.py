@@ -101,3 +101,10 @@ parser.add_option("-S", "--simpoint", action="store_true", default=False,
 parser.add_option("--at-instruction", action="store_true", default=False,
     help="""Treate value of --checkpoint-restore or --take-checkpoint as a
 number of instructions.""")
+
+
+# O3CPU options
+parser.add_option("--mat-entries", dest="MATEntries", type="int",
+        help="Number of entries in MAT")
+parser.add_option("--numSubscribers", type="int", default=2,
+        help="Max number of subscribers")

@@ -118,6 +118,7 @@ class DerivO3CPU(BaseCPU):
 
     LQEntries = Param.Unsigned(32, "Number of load queue entries")
     SQEntries = Param.Unsigned(32, "Number of store queue entries")
+    MATEntries = Param.Unsigned(32, "Number of memory alias table entries")
     LFSTSize = Param.Unsigned(1024, "Last fetched store table size")
     SSITSize = Param.Unsigned(1024, "Store set ID table size")
 
@@ -129,12 +130,15 @@ class DerivO3CPU(BaseCPU):
     numIQEntries = Param.Unsigned(64, "Number of instruction queue entries")
     numROBEntries = Param.Unsigned(192, "Number of reorder buffer entries")
 
+    numSubscribers = Param.Unsigned(2, "Number of subscribers")
+
     instShiftAmt = Param.Unsigned(2, "Number of bits to shift instructions by")
 
     smtNumFetchingThreads = Param.Unsigned(1, "SMT Number of Fetching Threads")
     smtFetchPolicy = Param.String('SingleThread', "SMT Fetch policy")
     smtLSQPolicy    = Param.String('Partitioned', "SMT LSQ Sharing Policy")
     smtLSQThreshold = Param.Int(100, "SMT LSQ Threshold Sharing Parameter")
+    smtMATThreshold = Param.Int(100, "SMT MAT Threshold Sharing Parameter")
     smtIQPolicy    = Param.String('Partitioned', "SMT IQ Sharing Policy")
     smtIQThreshold = Param.Int(100, "SMT IQ Threshold Sharing Parameter")
     smtROBPolicy   = Param.String('Partitioned', "SMT ROB Sharing Policy")

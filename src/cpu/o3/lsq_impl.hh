@@ -139,7 +139,7 @@ LSQ<Impl>::LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params)
 
         maxLQEntries = LQEntries;
         maxSQEntries = SQEntries;
-		maxMATEntries = MATEntries;
+                maxMATEntries = MATEntries;
 
         DPRINTF(LSQ, "LSQ sharing policy set to Dynamic\n");
     } else if (policy == "partitioned") {
@@ -148,7 +148,7 @@ LSQ<Impl>::LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params)
         //@todo:make work if part_amt doesnt divide evenly.
         maxLQEntries = LQEntries / numThreads;
         maxSQEntries = SQEntries / numThreads;
-		maxMATEntries= MATEntries / numThreads;
+                maxMATEntries= MATEntries / numThreads;
 
         DPRINTF(Fetch, "LSQ sharing policy set to Partitioned: "
                 "%i entries per LQ | %i entries per SQ",
@@ -158,14 +158,14 @@ LSQ<Impl>::LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params)
 
         assert(params->smtLSQThreshold > LQEntries);
         assert(params->smtLSQThreshold > SQEntries);
-		assert(params->smtLSQThreshold > MATEntires);
+        assert(params->smtLSQThreshold > MATEntries);
 
         //Divide up by threshold amount
         //@todo: Should threads check the max and the total
         //amount of the LSQ
         maxLQEntries  = params->smtLSQThreshold;
         maxSQEntries  = params->smtLSQThreshold;
-		maxMATEntries = params->smtMATThreshold;
+                maxMATEntries = params->smtMATThreshold;
 
         DPRINTF(LSQ, "LSQ sharing policy set to Threshold: "
                 "%i entries per LQ | %i entries per SQ",
@@ -272,7 +272,7 @@ LSQ<Impl>::removeEntries(ThreadID tid)
 {
     thread[tid].clearLQ();
     thread[tid].clearSQ();
-	thread[tid].clearMAT();
+        thread[tid].clearMAT();
 }
 
 template<class Impl>
@@ -281,7 +281,7 @@ LSQ<Impl>::resizeEntries(unsigned size, ThreadID tid)
 {
     thread[tid].resizeLQ(size);
     thread[tid].resizeSQ(size);
-	thread[tid].resizeMAT(size);
+        thread[tid].resizeMAT(size);
 }
 
 template<class Impl>
