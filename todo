@@ -1,0 +1,4 @@
+in iew_impl.hh:dispatchInsts() 
+  Do not block the whole iew unit, instead, skip the dispatch if issue queue is
+  over-subscribed, and block any previous stages.  When the instruction queue is
+  not over-subscribed, wake-up any previous stages and continue with dispatch.
