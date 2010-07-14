@@ -543,7 +543,11 @@ template<class Impl>
 void
 DefaultIEW<Impl>::wakeDependents(DynInstPtr &inst)
 {
-    instQueue.wakeDependents(inst);
+    int dependents = 0;
+    dependents = instQueue.wakeDependents(inst);
+	if (dependents > 0) {
+		
+	}
 }
 
 template<class Impl>
