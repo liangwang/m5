@@ -7,3 +7,8 @@ in inst_queue_impl.hh:wakeDependents()
   this function returns the number of wake-uped dependents. If the number is not
   zero, which means some dependents' operand is ready. If the producer is
   over-subscribed, clear the over-sub bit and unlock the dispatch stage.
+
+in iew_impl.hh
+  add blockSeqNum to each running threads which record the instruction sequence
+  number, in writebackInsts(), chech wether the current inst is blocking inst.
+  If so, unblock the dispatch stage.

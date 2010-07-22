@@ -497,6 +497,9 @@ class InstructionQueue
     Stats::Vector fuBusy;
     /** Number of times the FU was busy per instruction issued. */
     Stats::Formula fuBusyRate;
+
+  public:
+    DynInst getProducer(DynInst inst);
 };
 
 #endif //__CPU_O3_INST_QUEUE_HH__

@@ -574,7 +574,7 @@ DefaultDecode<Impl>::tick()
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
 
-    sortInsts();
+    sortInsts(); // sort insts according to its thread ID
 
     //Check stall and squash signals.
     while (threads != end) {

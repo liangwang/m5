@@ -533,6 +533,10 @@ class DefaultIEW
     Stats::Formula wbFanout;
     /** Number of instructions per cycle delayed in writing back . */
     Stats::Formula wbPenalizedRate;
+
+  private:
+    InstSeqNum blockedInsts[Impl:MaxThreads];
+
 };
 
 #endif // __CPU_O3_IEW_HH__

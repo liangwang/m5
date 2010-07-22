@@ -73,6 +73,10 @@ DefaultIEW<Impl>::DefaultIEW(O3CPU *_cpu, DerivO3CPUParams *params)
         dispatchStatus[tid] = Running;
         stalls[tid].commit = false;
         fetchRedirect[tid] = false;
+
+        // init blocked instruction's sequence number for each threads.
+        // added for lightoo
+        blockedInsts[tid] = 0;
     }
 
     wbMax = wbWidth * params->wbDepth;
@@ -1057,6 +1061,9 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
         if (add_to_iq) {
             if (!instQueue.insert(inst)) {
 				block(tid);
+
+                blockedInsts[tid] = inst->seqNum;
+
 				toRename->iewUnblock[tid] = false;
 				break;
             }
@@ -1453,6 +1460,11 @@ DefaultIEW<Impl>::writebackInsts()
             if (dependents) {
                 producerInst[tid]++;
                 consumerInst[tid]+= dependents;
+
+                if (inst->seqNum == blockedInsts[tid]) {
+                  unblock(tid);
+                  toRename->iewUnblock[tid] = true;
+                }
             }
             writebackCount[tid]++;
         }

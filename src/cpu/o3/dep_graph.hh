@@ -96,7 +96,7 @@ class DependencyGraph
     /** Checks if there are any dependents on a specific register. */
     bool empty(PhysRegIndex idx) { return !dependGraph[idx].next; }
 
-    inline bool overSubscribe(PhysRegIndex idx);
+    inline DynInstPtr overSubscribe(PhysRegIndex idx);
     void setMaxSubscribers(int num_subscribers) {maxSubscribers = num_subscribers;}
 
     /** Debugging function to dump out the dependency graph.
@@ -204,10 +204,13 @@ DependencyGraph<DynInstPtr>::insert(PhysRegIndex idx, DynInstPtr &new_inst)
 }
 
 template <class DynInstPtr>
-bool 
+DynInstPtr 
 DependencyGraph<DynInstPtr>::overSubscribe(PhysRegIndex idx)
 {
-  return (numSubscribers[idx]==maxSubscribers);
+  if (numSubscribers[idx] == maxSubscribers) 
+    return depGraph[idx].inst;
+  else
+    return NULL;
 }
 
 

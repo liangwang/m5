@@ -527,7 +527,7 @@ InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
 
     // Look through its source registers (physical regs), and mark any
     // dependencies.
-    addToDependents(new_inst);
+    //addToDependents(new_inst);
 
     // Have this instruction set itself as the producer of its destination
     // register(s).
@@ -1140,7 +1140,6 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
     // Loop through the instruction's source registers, adding
     // them to the dependency list if they are not ready.
     int8_t total_src_regs = new_inst->numSrcRegs();
-    bool return_val = false;
 
     for (int src_reg_idx = 0;
          src_reg_idx < total_src_regs;
@@ -1161,14 +1160,19 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
                         "is being added to the dependency chain.\n",
                         new_inst->readPC(), src_reg);
 
-                if (!dependGraph.overSubscribe(src_reg)){
+                DynInstPtr producerInst = dependGraph.overSubscribe(src_reg);
+                if (!producerInst){
                     dependGraph.insert(src_reg, new_inst);
 
                     // Change the return value to indicate that something
                     // was added to the dependency graph.
-                    return_val = true;
                 } else {
-                    return_val = false;
+                    if (blockedInsts[0] == NULL)
+                      blockedInsts[0] = producerInst;
+                    else if (blockedInst[1] == NULL)
+                      blockedInsts[1] = producerInst;
+                    else
+                      assert("More than two souruce registers");
                 }
             } else {
                 DPRINTF(IQ, "Instruction PC %#x has src reg %i that "
@@ -1180,7 +1184,10 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
         }
     }
 
-    return return_val;
+    if (blockedInsts[0] == NULL && blockedInsts[1] == NULL)
+        return true;
+    else
+      return false;
 }
 
 template <class Impl>
