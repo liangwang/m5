@@ -1431,3 +1431,45 @@ InstructionQueue<Impl>::dumpInsts()
         ++num;
     }
 }
+
+template <class Impl>
+bool
+InstructionQueue<Impl>::isOverSub(DynInstPtr inst)
+{
+    bool oversub = false;
+    ThreadID tid = inst->threadNumber;
+    // Loop through the instruction's source registers, adding
+    // them to the dependency list if they are not ready.
+    int8_t total_src_regs = inst->numSrcRegs();
+
+    for (int src_reg_idx = 0;
+         src_reg_idx < total_src_regs;
+         src_reg_idx++)
+    {
+        // Only add it to the dependency graph if it's not ready.
+        if (!inst->isReadySrcRegIdx(src_reg_idx)) {
+            PhysRegIndex src_reg = new_inst->renamedSrcRegIdx(src_reg_idx);
+
+            if (src_reg >= numPhysRegs) {
+                continue;
+            } else if (regScoreboard[src_reg] == false) {
+                DynInstPtr producerInst = dependGraph.overSubscribe(src_reg);
+                if (!producerInst){
+                    continue;
+                } else {
+                    oversub = true;
+                    if (blockedInsts[tid][0] == NULL)
+                      blockedInsts[tid][0] = producerInst;
+                    else if (blockedInst[tid][1] == NULL)
+                      blockedInsts[tid][1] = producerInst;
+                    else
+                      assert("More than two source registers");
+                }
+            } else {
+                continue;
+            }
+        }
+    }
+    return oversub;
+}
+

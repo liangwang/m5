@@ -500,6 +500,11 @@ class InstructionQueue
 
   public:
     DynInst getProducer(DynInst inst);
+
+    /** Returns whether or not the IQ is over-subscribed with certan instruction. */
+    bool isOverSub(ThreadID tid, DynInstPtr inst);
+  private:    
+    DynInstPtr blockedInsts[Impl::MaxThreads][2]; //assume the maximun of src registers are 2
 };
 
 #endif //__CPU_O3_INST_QUEUE_HH__
