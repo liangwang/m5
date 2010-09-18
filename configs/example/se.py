@@ -139,9 +139,11 @@ if options.detailed or options.inorder:
 CPUClass.clock = '2GHz'
 CPUClass.numThreads = numThreads;
 
+
+
 np = options.num_cpus
 
-system = System(cpu = [CPUClass(cpu_id=i) for i in xrange(np)],
+system = System(cpu = [CPUClass(cpu_id=i,) for i in xrange(np)],
                 physmem = PhysicalMemory(range=AddrRange("512MB")),
                 membus = Bus(), mem_mode = test_mem_mode)
 
@@ -154,6 +156,18 @@ for i in xrange(np):
 
     if options.fastmem:
         system.cpu[0].physmem_port = system.physmem.port
+
+#    if options.detailed:
+#        CPUClass.numSubscribers = Param.Unsigned(options.numSubscribers)
+#        CPUClass.MATEntries = Param.Unsigned(options.MATEntries)
+#        CPUClass.fetchWidth = Param.Unsigned(options.fetchWidth)
+#        CPUClass.decodeWidth = Param.Unsigned(options.decodeWidth)
+#        CPUClass.renameWidth = Param.Unsigned(options.renameWidth)
+#        CPUClass.issueWidth = Param.Unsigned(options.issueWidth)
+#        CPUClass.dispatchWidth = Param.Unsigned(options.dispatchWidth)
+#        CPUClass.wbWidth = Param.Unsigned(options.wbWdith)
+#        CPUClass.commitWidth = Param.Unsigned(options.commitWidth)
+#        CPUClass.squashWidth = Param.Unsigned(options.squashWidth)
 
 root = Root(system = system)
 

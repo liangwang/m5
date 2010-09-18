@@ -534,9 +534,14 @@ class DefaultIEW
     /** Number of instructions per cycle delayed in writing back . */
     Stats::Formula wbPenalizedRate;
 
+    // begin o3lite
   private:
-    InstSeqNum blockedInsts[Impl:MaxThreads];
+    /** Stat for number of times the IQ becomes over-subscribed. */
+    Stats::Scalar iewIQOversubEvents;
 
+    /** status for over-subscription */
+    bool oversubStatus[Impl::MaxThreads];
+    // end o3lite
 };
 
 #endif // __CPU_O3_IEW_HH__

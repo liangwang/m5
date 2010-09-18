@@ -165,7 +165,7 @@ class InstructionQueue
     bool hasReadyInsts();
 
     /** Inserts a new instruction into the IQ. */
-    bool insert(DynInstPtr &new_inst);
+    void insert(DynInstPtr &new_inst);
 
     /** Inserts a new, non-speculative instruction into the IQ. */
     void insertNonSpec(DynInstPtr &new_inst);
@@ -498,13 +498,34 @@ class InstructionQueue
     /** Number of times the FU was busy per instruction issued. */
     Stats::Formula fuBusyRate;
 
+    // begin o3lite
   public:
-    DynInst getProducer(DynInst inst);
+    /** check whether inst(consumer) leads to over subscription. */ 
+    bool checkOversub(DynInstPtr inst);
 
-    /** Returns whether or not the IQ is over-subscribed with certan instruction. */
-    bool isOverSub(ThreadID tid, DynInstPtr inst);
-  private:    
-    DynInstPtr blockedInsts[Impl::MaxThreads][2]; //assume the maximun of src registers are 2
+    /** check whether inst(producer) is an over subscribed producer */
+    bool isOverSubscriber(DynInstPtr inst);
+
+    /** remove inst from overSubscriber list, return
+     *  true if no more oversubscribers for the thread,
+     *  else return false
+     **/
+    bool completeProducer(DynInstPtr inst);
+
+  private:
+    InstSeqNum overSubscriber[Impl::MaxThreads][2]; // assume two source registers 
+
+    /** Number of max subscribers. */
+    int maxSubscribers;
+
+    /** Number of subscribers for each register. */
+    std::vector<int> numSubscribers;
+
+    /** Add instruction to its subscriber, just increase the subscriber number. */
+    void addToSubscribers(DynInstPtr &new_inst);
+
+	/** Reset all data structures realted to subscription. */
+	void resetAllSubscribers();
 };
 
 #endif //__CPU_O3_INST_QUEUE_HH__

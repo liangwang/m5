@@ -108,3 +108,19 @@ parser.add_option("--mat-entries", dest="MATEntries", type="int",
         help="Number of entries in MAT")
 parser.add_option("--numSubscribers", type="int", default=2,
         help="Max number of subscribers")
+parser.add_option("--fetchWidth", dest="fetchWidth", type="int", default=1,
+        help="fetch width")
+parser.add_option("--decodeWidth", dest="decodeWidth", type="int", default=1,
+        help="decode width")
+parser.add_option("--renameWidth", dest="renameWidth", type="int", default=1,
+        help="rename width")
+parser.add_option("--dispatchWidth", dest="dispatchWidth", type="int", default=1,
+        help="dispatch width")
+parser.add_option("--issueWidth", dest="issueWidth", type="int", default=1,
+        help="issue width")
+parser.add_option("--wbWidth", dest="wbWidth", type="int", default=1,
+        help="write back width")
+parser.add_option("--commitWidth", dest="commitWidth", type="int", default=1,
+        help="commit width")
+parser.add_option("--squashWidth", dest="squashWidth", type="int", default=1,
+        help="squash width")

@@ -74,9 +74,9 @@ DefaultIEW<Impl>::DefaultIEW(O3CPU *_cpu, DerivO3CPUParams *params)
         stalls[tid].commit = false;
         fetchRedirect[tid] = false;
 
-        // init blocked instruction's sequence number for each threads.
-        // added for lightoo
-        blockedInsts[tid] = 0;
+        // begin o3lite
+        oversubStatus[tid] = false;
+        // end o3lite
     }
 
     wbMax = wbWidth * params->wbDepth;
@@ -397,6 +397,10 @@ DefaultIEW<Impl>::takeOverFrom()
         dispatchStatus[tid] = Running;
         stalls[tid].commit = false;
         fetchRedirect[tid] = false;
+
+        // begin o3lite
+        oversubStatus[tid] = false;
+        // end o3lite
     }
 
     updateLSQNextCycle = false;
@@ -543,15 +547,26 @@ DefaultIEW<Impl>::unblock(ThreadID tid)
     }
 }
 
+/** not used in the whole program */
 template<class Impl>
 void
 DefaultIEW<Impl>::wakeDependents(DynInstPtr &inst)
 {
-    int dependents = 0;
-    dependents = instQueue.wakeDependents(inst);
-	if (dependents > 0) {
-		
-	}
+    ThreadID tid = inst->threadNumber;
+
+    instQueue.wakeDependents(inst);
+
+    if ( oversubStatus[tid] == true ) {
+        if (instQueue.completeProducer(inst)) {
+            // the thread needs to be wake-up,
+            // clear oversub status
+
+            oversubStatus[tid] = false;
+
+            unblock(tid);
+        }
+    }
+
 }
 
 template<class Impl>
@@ -813,7 +828,8 @@ DefaultIEW<Impl>::checkSignalsAndUpdate(ThreadID tid)
         return;
     }
 
-    if (dispatchStatus[tid] == Blocked) {
+    if (dispatchStatus[tid] == Blocked && 
+        oversubStatus[tid] == false) {
         // Status from previous cycle was blocked, but there are no more stall
         // conditions.  Switch over to unblocking.
         DPRINTF(IEW, "[tid:%i]: Done blocking, switching to unblocking.\n",
@@ -844,8 +860,9 @@ DefaultIEW<Impl>::sortInsts()
 {
     int insts_from_rename = fromRename->size;
 #ifdef DEBUG
-    for (ThreadID tid = 0; tid < numThreads; tid++)
-        assert(insts[tid].empty());
+//o3lite: the assertion failed for o3lite. why such assertion is only needed in debug mode?
+//    for (ThreadID tid = 0; tid < numThreads; tid++)
+//        assert(insts[tid].empty());
 #endif
     for (int i = 0; i < insts_from_rename; ++i) {
         insts[fromRename->insts[i]->threadNumber].push(fromRename->insts[i]);
@@ -1037,37 +1054,26 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
             break;
         }
 
-		//Check for over subscribed
-         if (inst->isLoad()) {
-            add_to_iq = true;
-        } else if (inst->isStore()) {
-            if (inst->isStoreConditional()) {
-                add_to_iq = false;
-            } else {
-                add_to_iq = true;
-            }
-        } else if (inst->isMemBarrier() || inst->isWriteBarrier()) {
-            add_to_iq = false;
-        } else if (inst->isNop()) {
-            add_to_iq = false;
-        } else if (inst->isExecuted()) {
-            add_to_iq = false;
-        } else {
-            add_to_iq = true;
-        }
-        if (inst->isNonSpeculative()) {
-            add_to_iq = false;
-        }
-        if (add_to_iq) {
-            if (!instQueue.insert(inst)) {
-				block(tid);
 
-                blockedInsts[tid] = inst->seqNum;
+        // begin o3lite
+        // check over subscription
+        if (instQueue.checkOversub(inst)) {
+            DPRINTF(IEW, "[tid:%i]: Issue: IQ has become over-subscribed.\n", tid);
 
-				toRename->iewUnblock[tid] = false;
-				break;
-            }
-        }		
+            // Call function to start blocking.
+            block(tid);
+
+            // Set unblock to false. Special case where we are using
+            // skidbuffer (unblocking) instructions but then we still
+            // get full in the IQ.
+            toRename->iewUnblock[tid] = false;
+
+            oversubStatus[tid] = true;
+
+            ++iewIQOversubEvents;
+            break;
+        }
+        // end o3lite
 
         // Otherwise issue the instruction just fine.
         if (inst->isLoad()) {
@@ -1154,12 +1160,10 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
         }
 
         // If the instruction queue is not full, then add the
-        // instruction. (moved ahead)
-        /*
+        // instruction.
         if (add_to_iq) {
             instQueue.insert(inst);
         }
-        */
 
         insts_to_dispatch.pop();
 
@@ -1222,11 +1226,20 @@ DefaultIEW<Impl>::executeInsts()
     }
 
     // Uncomment this if you want to see all available instructions.
-//    printAvailableInsts();
+    // printAvailableInsts();
 
     // Execute/writeback any instructions that are available.
     int insts_to_execute = fromIssue->size;
     int inst_num = 0;
+
+    // debug by lw2aw
+//    if (insts_to_execute == 0) 
+//      DPRINTF(IEW, "no instruction to execute\n");
+//    else
+//      DPRINTF(IEW, "%d instructions to be executed\n", insts_to_execute);
+    // end of debug
+
+
     for (; inst_num < insts_to_execute;
           ++inst_num) {
 
@@ -1340,8 +1353,15 @@ DefaultIEW<Impl>::executeInsts()
                     predictedNotTakenIncorrect++;
                 }
             } else if (ldstQueue.violation(tid)) {
-                assert(inst->isMemRef());
-                // If there was an ordering violation, then get the
+
+                // o3lite: remove this assertion since the load/store violation
+                // may come from previous store commit no matter wheather
+                // currently executed instruction is load/store.
+				/* assert(inst->isMemRef()); */
+
+
+
+				// If there was an ordering violation, then get the
                 // DynInst that caused the violation.  Note that this
                 // clears the violation signal.
                 DynInstPtr violator;
@@ -1457,14 +1477,24 @@ DefaultIEW<Impl>::writebackInsts()
                 scoreboard->setReg(inst->renamedDestRegIdx(i));
             }
 
+            // begin o3lite
+            if ( oversubStatus[tid] == true ) {
+                if (instQueue.completeProducer(inst)) {
+                    // the thread needs to be wake-up,
+                    // clear oversub status
+                    
+                    DPRINTF(IEW, "resume from over-subscription\n");
+
+                    oversubStatus[tid] = false;
+
+                    unblock(tid);
+                }
+            }
+            // end o3lite
+
             if (dependents) {
                 producerInst[tid]++;
                 consumerInst[tid]+= dependents;
-
-                if (inst->seqNum == blockedInsts[tid]) {
-                  unblock(tid);
-                  toRename->iewUnblock[tid] = true;
-                }
             }
             writebackCount[tid]++;
         }

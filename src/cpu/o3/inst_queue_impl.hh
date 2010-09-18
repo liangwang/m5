@@ -89,7 +89,12 @@ InstructionQueue<Impl>::InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr,
     //Create an entry for each physical register within the
     //dependency graph.
     dependGraph.resize(numPhysRegs);
-    dependGraph.setMaxSubscribers(params->numSubscribers);
+
+    // begin o3lite
+    maxSubscribers = params->numSubscribers;
+    numSubscribers.resize(numPhysRegs);
+    resetAllSubscribers();
+    // end o3lite
 
     // Resize the register scoreboard.
     regScoreboard.resize(numPhysRegs);
@@ -248,7 +253,8 @@ InstructionQueue<Impl>::regStats()
         .init(0,totalWidth,1)
         .name(name() + ".ISSUE:issued_per_cycle")
         .desc("Number of insts issued each cycle")
-        .flags(pdf);
+        .flags(pdf)
+        ;
 /*
     dist_unissued
         .init(Num_OpClasses+2)
@@ -498,22 +504,12 @@ InstructionQueue<Impl>::hasReadyInsts()
 }
 
 template <class Impl>
-bool
+void
 InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
 {
     // Make sure the instruction is valid
     assert(new_inst);
 
-    bool return_val = true;
-
-    // Look through its source registers (physical regs), and mark any
-    // dependencies.
-    if (!addToDependents(new_inst)) {
-        return_val = false;
-        DPRINTF(IQ, "instruction [sn:%lli] is over-subscribed.\n", new_inst->seqNum);
-        return return_val;
-    }
-	
     DPRINTF(IQ, "Adding instruction [sn:%lli] PC %#x to the IQ.\n",
             new_inst->seqNum, new_inst->readPC());
 
@@ -527,11 +523,16 @@ InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
 
     // Look through its source registers (physical regs), and mark any
     // dependencies.
-    //addToDependents(new_inst);
+    addToDependents(new_inst);
 
     // Have this instruction set itself as the producer of its destination
     // register(s).
     addToProducers(new_inst);
+
+    // begin o3lite
+    // increase subscriber number
+    addToSubscribers(new_inst);
+    // end o3lite
 
     if (new_inst->isMemRef()) {
         memDepUnit[new_inst->threadNumber].insert(new_inst);
@@ -544,8 +545,6 @@ InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
     count[new_inst->threadNumber]++;
 
     assert(freeEntries == (numEntries - countInsts()));
-
-    return return_val;
 }
 
 template <class Impl>
@@ -940,6 +939,10 @@ InstructionQueue<Impl>::wakeDependents(DynInstPtr &completed_inst)
         assert(dependGraph.empty(dest_reg));
         dependGraph.clearInst(dest_reg);
 
+        // begin o3lite
+        numSubscribers[dest_reg]=0;
+        // end o3lite
+
         // Mark the scoreboard as having that register ready.
         regScoreboard[dest_reg] = true;
     }
@@ -1028,6 +1031,11 @@ InstructionQueue<Impl>::squash(ThreadID tid)
 
     // Also tell the memory dependence unit to squash.
     memDepUnit[tid].squash(squashedSeqNum[tid], tid);
+
+    // begin o3lite 
+	// Reset all subscription structures.
+	resetAllSubscribers();
+	// end o3lite
 }
 
 template <class Impl>
@@ -1140,6 +1148,7 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
     // Loop through the instruction's source registers, adding
     // them to the dependency list if they are not ready.
     int8_t total_src_regs = new_inst->numSrcRegs();
+    bool return_val = false;
 
     for (int src_reg_idx = 0;
          src_reg_idx < total_src_regs;
@@ -1160,20 +1169,11 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
                         "is being added to the dependency chain.\n",
                         new_inst->readPC(), src_reg);
 
-                DynInstPtr producerInst = dependGraph.overSubscribe(src_reg);
-                if (!producerInst){
-                    dependGraph.insert(src_reg, new_inst);
+                dependGraph.insert(src_reg, new_inst);
 
-                    // Change the return value to indicate that something
-                    // was added to the dependency graph.
-                } else {
-                    if (blockedInsts[0] == NULL)
-                      blockedInsts[0] = producerInst;
-                    else if (blockedInst[1] == NULL)
-                      blockedInsts[1] = producerInst;
-                    else
-                      assert("More than two souruce registers");
-                }
+                // Change the return value to indicate that something
+                // was added to the dependency graph.
+                return_val = true;
             } else {
                 DPRINTF(IQ, "Instruction PC %#x has src reg %i that "
                         "became ready before it reached the IQ.\n",
@@ -1184,10 +1184,7 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
         }
     }
 
-    if (blockedInsts[0] == NULL && blockedInsts[1] == NULL)
-        return true;
-    else
-      return false;
+    return return_val;
 }
 
 template <class Impl>
@@ -1199,8 +1196,6 @@ InstructionQueue<Impl>::addToProducers(DynInstPtr &new_inst)
     // to the producing instruction will be placed in the head node of
     // the dependency links.
     int8_t total_dest_regs = new_inst->numDestRegs();
-
-    assert(total_dest_regs < 2); // support insructions have more than 2 destination registers
 
     for (int dest_reg_idx = 0;
          dest_reg_idx < total_dest_regs;
@@ -1432,44 +1427,180 @@ InstructionQueue<Impl>::dumpInsts()
     }
 }
 
+// begin o3lite
 template <class Impl>
 bool
-InstructionQueue<Impl>::isOverSub(DynInstPtr inst)
+InstructionQueue<Impl>::checkOversub(DynInstPtr inst)
 {
-    bool oversub = false;
+    bool return_val = false;
+
+    assert(inst);
+
+    DPRINTF(IQ, "begin check Oversub.\n"); // removed after debug
+
     ThreadID tid = inst->threadNumber;
-    // Loop through the instruction's source registers, adding
-    // them to the dependency list if they are not ready.
+    
     int8_t total_src_regs = inst->numSrcRegs();
 
+    DPRINTF(IQ, "Inst PC %#x, dest reg %i/%i, src reg1 %i/%i, src reg2 %i/%i\n", inst->readPC(),
+            (inst->numDestRegs()>0)? inst->destRegIdx(0) : 9999,
+            (inst->numDestRegs()>0)? inst->renamedDestRegIdx(0) : 9999,
+            (total_src_regs >= 1)? inst->srcRegIdx(0) : 9999,
+            (total_src_regs >= 1)? inst->renamedSrcRegIdx(0) : 9999,
+            (total_src_regs >= 2)? inst->srcRegIdx(1) : 9999,
+            (total_src_regs >= 2)? inst->renamedSrcRegIdx(1) : 9999
+            );
+
+	
+	// assert(total_src_regs <= 2); //cmoveq has three source registers???
+	if (total_src_regs > 2)
+		  DPRINTF(IQ, "Inst PC %#x has more than 2 source operands\n", inst->readPC());
+
+
+    PhysRegIndex src_reg_1;
     for (int src_reg_idx = 0;
          src_reg_idx < total_src_regs;
          src_reg_idx++)
     {
         // Only add it to the dependency graph if it's not ready.
         if (!inst->isReadySrcRegIdx(src_reg_idx)) {
-            PhysRegIndex src_reg = new_inst->renamedSrcRegIdx(src_reg_idx);
+            PhysRegIndex src_reg = inst->renamedSrcRegIdx(src_reg_idx);
 
+            // if two src registers have the same index, skip the second check
+			if (src_reg_idx == 0)
+				src_reg_1 = src_reg;
+			else
+				if (src_reg == src_reg_1)
+					continue;
+
+            // Check the IQ's scoreboard to make sure the register
+            // hasn't become ready while the instruction was in flight
+            // between stages.  Only if it really isn't ready should
+            // it be added to the dependency graph.
             if (src_reg >= numPhysRegs) {
                 continue;
             } else if (regScoreboard[src_reg] == false) {
-                DynInstPtr producerInst = dependGraph.overSubscribe(src_reg);
-                if (!producerInst){
-                    continue;
-                } else {
-                    oversub = true;
-                    if (blockedInsts[tid][0] == NULL)
-                      blockedInsts[tid][0] = producerInst;
-                    else if (blockedInst[tid][1] == NULL)
-                      blockedInsts[tid][1] = producerInst;
-                    else
-                      assert("More than two source registers");
+                DPRINTF(IQ, "Instruction PC %#x has src reg %i that "
+                        "is being checked for over-subscription.\n", 
+                        inst->readPC(), src_reg);
+
+                DynInstPtr producer_inst= dependGraph.getProducer(src_reg);
+                InstSeqNum producer_seq = producer_inst->seqNum;
+
+                if (numSubscribers[src_reg] == maxSubscribers){  
+                    if ( overSubscriber[tid][0] == 0) {
+                        overSubscriber[tid][0] = producer_seq;
+                    } else if (overSubscriber[tid][1] == 0) {
+                        overSubscriber[tid][1] = producer_seq;
+                    } else {
+                        assert(false); // there should be no more than two over-subscribers
+                    }
+                    // Change the return value to indicate that something
+                    // was added to the dependency graph.
+                    return_val = true;
+
+
+                    DPRINTF(IQ, "over-subscription detected on Instruction PC %#x, "
+                            "src reg %i.\n",
+                            inst->readPC(), src_reg);
                 }
-            } else {
-                continue;
             }
         }
     }
-    return oversub;
+
+    DPRINTF(IQ, "end check Oversub.\n"); // removed after debug
+    return return_val;
+}
+
+
+template <class Impl>
+bool
+InstructionQueue<Impl>::isOverSubscriber(DynInstPtr inst)
+{
+    assert(inst);
+
+    ThreadID tid = inst->threadNumber;
+
+    InstSeqNum seqNum = inst->seqNum;
+
+    return (overSubscriber[tid][0] == seqNum) || (overSubscriber[tid][1] == seqNum);
+}
+
+
+template <class Impl>
+bool
+InstructionQueue<Impl>::completeProducer(DynInstPtr inst)
+{
+  assert(inst);
+  ThreadID tid = inst->threadNumber;
+  InstSeqNum seqNum = inst->seqNum;
+  bool ret_val = false;
+
+  if ( overSubscriber[tid][0] == seqNum) {
+      overSubscriber[tid][0] = 0;
+	  ret_val = true;
+  } else if (overSubscriber[tid][1] == seqNum) {
+      overSubscriber[tid][1] = 0;
+	  ret_val = true;
+  } 
+
+  return ret_val;
+
+}
+
+template <class Impl>
+void
+InstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
+{
+  assert(new_inst);
+
+  int8_t total_src_regs = new_inst->numSrcRegs();
+
+  // assert(total_src_regs <= 2); //cmoveq has three source registers???
+  if (total_src_regs > 2)
+  	    DPRINTF(IQ, "Inst PC %#x has more than 2 source operands\n", new_inst->readPC());
+
+  PhysRegIndex src_reg_1;
+  for (int src_reg_idx = 0;
+       src_reg_idx < total_src_regs;
+       src_reg_idx++)
+    {
+      if (!new_inst->isReadySrcRegIdx(src_reg_idx)) {
+          PhysRegIndex src_reg = new_inst->renamedSrcRegIdx(src_reg_idx);
+
+          if (src_reg >= numPhysRegs) {
+              continue;
+          } else if (regScoreboard[src_reg] == false) {
+              if (src_reg_idx == 0)
+			  	src_reg_1 = src_reg;
+			  else
+			  	if (src_reg == src_reg_1)
+					continue;
+			  assert(numSubscribers[src_reg] < maxSubscribers);
+              numSubscribers[src_reg] ++;
+          }
+      }
+    }
+}
+
+template <class Impl>
+void
+InstructionQueue<Impl>::resetAllSubscribers()
+{
+
+    // reset number of subscribers array
+    std::vector<int>::iterator it = numSubscribers.begin();
+    std::vector<int>::iterator eit = numSubscribers.end();
+    while (it != eit) {
+        *it = 0;
+        it ++;
+    }
+
+    // reset overSubscriber record array
+    for (ThreadID tid = 0; tid <numThreads; tid++) {
+        overSubscriber[tid][0] = 0;
+        overSubscriber[tid][1] = 0;
+    }
+
 }
 

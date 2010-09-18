@@ -516,7 +516,7 @@ LSQUnit<Impl>::executeLoad(DynInstPtr &inst)
 //            }
 //
 //            incrLdIdx(load_idx);
-
+//        }
     }
 
     return load_fault;
@@ -539,17 +539,17 @@ LSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
 
     // Check the recently completed loads to see if any match this store's
     // address.  If so, then we have a memory ordering violation.
-//    int load_idx = store_inst->lqIdx;
+    // int load_idx = store_inst->lqIdx;
 
     Fault store_fault = store_inst->initiateAcc();
-/*
+
     if (storeQueue[store_idx].size == 0) {
         DPRINTF(LSQUnit,"Fault on Store PC %#x, [sn:%lli],Size = 0\n",
                 store_inst->readPC(),store_inst->seqNum);
 
         return store_fault;
     }
-*/
+
     assert(store_fault == NoFault);
 
     if (store_inst->isStoreConditional()) {
@@ -600,26 +600,26 @@ template <class Impl>
 bool
 LSQUnit<Impl>::commitLoad()
 {
-    assert(loadQueue[loadHead]);
+  assert(loadQueue[loadHead]);
 
-    DPRINTF(LSQUnit, "Committing head load instruction, PC %#x\n",
-            loadQueue[loadHead]->readPC());
+  DPRINTF(LSQUnit, "Committing head load instruction, PC %#x\n",
+          loadQueue[loadHead]->readPC());
 
-        DynInstPtr inst = loadQueue[loadHead];
-        if (!matCommitLoad(inst)) {
-                memDepViolator = inst;
-        }
+  DynInstPtr inst = loadQueue[loadHead];
+  if (!matCommitLoad(inst)) {
+      memDepViolator = inst;
+  }
 
-    loadQueue[loadHead] = NULL;
+  loadQueue[loadHead] = NULL;
 
-    incrLdIdx(loadHead);
+  incrLdIdx(loadHead);
 
-    --loads;
+  --loads;
 
-        if (memDepViolator)
-                return false;
-        else
-                return true;
+  if (memDepViolator)
+    return false;
+  else
+    return true;
 }
 
 template <class Impl>
@@ -648,10 +648,18 @@ LSQUnit<Impl>::commitStores(InstSeqNum &youngest_inst)
         // been marked as able to write back.
 
         if (!storeQueue[store_idx].canWB) {
-            if (storeQueue[store_idx].inst->seqNum > youngest_inst ||
-                                storeQueue[store_idx].inst->seqNum > loadQueue[loadHead]->seqNum) {
+            // make sure it is older store than youngest_inst
+            if (storeQueue[store_idx].inst->seqNum > youngest_inst) {
                 break;
             }
+            
+            // ?? why this condition is needed??
+            /*  
+            if ( loads != 0 && 
+				storeQueue[store_idx].inst->seqNum > loadQueue[loadHead]->seqNum) {
+				break;
+				}
+            */
             DPRINTF(LSQUnit, "Marking store as able to write back, PC "
                     "%#x [sn:%lli]\n",
                     storeQueue[store_idx].inst->readPC(),

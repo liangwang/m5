@@ -151,7 +151,7 @@ LSQ<Impl>::LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params)
                 maxMATEntries= MATEntries / numThreads;
 
         DPRINTF(Fetch, "LSQ sharing policy set to Partitioned: "
-                "%i entries per LQ | %i entries per SQ",
+                "%i entries per LQ | %i entries per SQ\n",
                 maxLQEntries,maxSQEntries);
     } else if (policy == "threshold") {
         lsqPolicy = Threshold;
