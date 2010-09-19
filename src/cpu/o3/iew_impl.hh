@@ -1578,6 +1578,36 @@ DefaultIEW<Impl>::tick()
 
             ldstQueue.commitLoads(fromCommit->commitInfo[tid].doneSeqNum,tid);
 
+			// o3lite: check whether commit ldst lead to violation
+			if (ldstQueue.violation(tid)) {
+							// If there was an ordering violation, then get the
+							// DynInst that caused the violation.  Note that this
+							// clears the violation signal.
+							DynInstPtr violator;
+							violator = ldstQueue.getMemDepViolator(tid);
+			
+							DPRINTF(IEW, "LDSTQ detected a violation.  Violator PC: "
+									"%#x, inst PC: %#x.  Addr is: %#x.\n",
+									violator->readPC(), inst->readPC(), inst->physEffAddr);
+			
+							// Ensure the violating instruction is older than
+							// current squash
+			/*				  if (fetchRedirect[tid] &&
+								violator->seqNum >= toCommit->squashedSeqNum[tid] + 1)
+								continue;
+			*/
+							fetchRedirect[tid] = true;
+			
+							// Tell the instruction queue that a violation has occured. (for Mem_Dep_Unit only)
+							//instQueue.violation(inst, violator);
+			
+							// Squash.
+							squashDueToMemOrder(violator,tid);
+			
+							++memOrderViolationEvents;
+							continue;
+						}
+
             updateLSQNextCycle = true;
             instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
         }
