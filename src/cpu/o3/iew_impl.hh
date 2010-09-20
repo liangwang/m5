@@ -828,7 +828,7 @@ DefaultIEW<Impl>::checkSignalsAndUpdate(ThreadID tid)
       return;
   }
 
-  if (dispatchStatus[tid] == Blocked && 
+  if (dispatchStatus[tid] == Blocked &&
       oversubStatus[tid] == false) {
       // Status from previous cycle was blocked, but there are no more stall
       // conditions.  Switch over to unblocking.
@@ -1233,7 +1233,7 @@ DefaultIEW<Impl>::executeInsts()
   int inst_num = 0;
 
   // debug by lw2aw
-  //    if (insts_to_execute == 0) 
+  //    if (insts_to_execute == 0)
   //      DPRINTF(IEW, "no instruction to execute\n");
   //    else
   //      DPRINTF(IEW, "%d instructions to be executed\n", insts_to_execute);
@@ -1578,6 +1578,9 @@ DefaultIEW<Impl>::tick()
 
           ldstQueue.commitLoads(fromCommit->commitInfo[tid].doneSeqNum,tid);
 
+          updateLSQNextCycle = true;
+          instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
+
           // o3lite: check whether commit ldst lead to violation
           if (ldstQueue.violation(tid)) {
               // If there was an ordering violation, then get the
@@ -1601,9 +1604,6 @@ DefaultIEW<Impl>::tick()
               ++memOrderViolationEvents;
               continue;
           }
-
-          updateLSQNextCycle = true;
-          instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
       }
 
       if (fromCommit->commitInfo[tid].nonSpecSeqNum != 0) {
