@@ -21,6 +21,13 @@ parser.add_option('--numThreads', default=1, type='int',
         help='number of threads')
 parser.add_option("--MATEntries", dest="MATEntries", type="int",
         default = 32, help="Number of entries in MAT")
+
+parser.add_option("--LQEntries", dest="LQEntries", type="int",
+                  default=192, help="Number of entries in Load queue")
+parser.add_option("--SQEntries", dest="SQEntries", type="int",
+                  default=192, help="Number of entries in Store queue")
+
+
 parser.add_option("--numSubscribers", type="int", default=2,
         help="Max number of subscribers")
 parser.add_option("--fetchWidth", dest="fetchWidth", type="int",

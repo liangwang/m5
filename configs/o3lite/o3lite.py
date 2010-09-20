@@ -34,6 +34,8 @@ system = System(cpu = [DerivO3CPU(cpu_id = i,
     clock = '2GHz',
     numThreads = options.numThreads,
     MATEntries = options.MATEntries,
+    LQEntries = options.LQEntries,
+    SQEntries = options.SQEntries,
     numSubscribers = options.numSubscribers,
     fetchWidth = options.fetchWidth,
     decodeWidth = options.decodeWidth,
@@ -90,7 +92,7 @@ for i in xrange (options.num_cpus):
         system.cpu[i].workload = Water_spatial()
     else:
         system.cpu[i].workload = process
-    
+
 root.system.mem_mode = 'timing'
 
 m5.instantiate(root)
