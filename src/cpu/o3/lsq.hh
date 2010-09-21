@@ -111,11 +111,17 @@ class LSQ {
     void commitLoads(InstSeqNum &youngest_inst, ThreadID tid)
     { thread[tid].commitLoads(youngest_inst); }
 
+    bool preCommitLoad(DynInstPtr &load_inst, ThreadID tid)
+    { return thread[tid].preCommitLoad(load_inst); }
+
     /**
      * Commits stores up until the given sequence number for a specific thread.
      */
     void commitStores(InstSeqNum &youngest_inst, ThreadID tid)
     { thread[tid].commitStores(youngest_inst); }
+
+    bool preCommitStore(DynInstPtr &store_inst, ThreadID tid)
+    { return thread[tid].preCommitStore(store_inst); }
 
     /**
      * Attempts to write back stores until all cache ports are used or the

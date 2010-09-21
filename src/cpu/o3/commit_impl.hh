@@ -128,6 +128,8 @@ DefaultCommit<Impl>::DefaultCommit(O3CPU *_cpu, DerivO3CPUParams *params)
         committedStores[tid] = false;
         trapSquash[tid] = false;
         tcSquash[tid] = false;
+        //o3lite:
+        matSquash[tid] = false;
         microPC[tid] = 0;
         nextMicroPC[tid] = 0;
         PC[tid] = 0;
@@ -372,6 +374,9 @@ DefaultCommit<Impl>::takeOverFrom()
         changedROBNumEntries[tid] = false;
         trapSquash[tid] = false;
         tcSquash[tid] = false;
+
+        //o3lite:
+        matSquash[tid] = false;
     }
     squashCounter = 0;
     rob->takeOverFrom();
@@ -555,6 +560,20 @@ DefaultCommit<Impl>::squashFromTC(ThreadID tid)
 
 template <class Impl>
 void
+DefaultCommit<Impl>::squashFromMAT(ThreadID tid)
+{
+  squashAll(tid);
+  DPRINTF(Commit, "Squashing from MAT, restarting at PC %#x\n", PC[tid]);
+
+  thread[tid]->inSyscall = false;
+  commitStatus[tid] = ROBSquashing;
+  cpu->activityThisCycle();
+
+  matSquash[tid] = false;
+}
+
+template <class Impl>
+void
 DefaultCommit<Impl>::tick()
 {
     wroteToTimeBuffer = false;
@@ -672,7 +691,8 @@ DefaultCommit<Impl>::handleInterrupt()
     } else if (commitStatus[0] != TrapPending &&
                cpu->checkInterrupts(cpu->tcBase(0)) &&
                !trapSquash[0] &&
-               !tcSquash[0]) {
+               !tcSquash[0] &&
+               !matSquash[0]) {
         // Process interrupts if interrupts are enabled, not in PAL
         // mode, and no other traps or external squashes are currently
         // pending.
@@ -718,9 +738,11 @@ DefaultCommit<Impl>::commit()
         // both, that's a bad sign.
         if (trapSquash[tid] == true) {
             assert(!tcSquash[tid]);
+            assert(!matSquash[tid]);
             squashFromTrap(tid);
         } else if (tcSquash[tid] == true) {
             assert(commitStatus[tid] != TrapPending);
+            assert(!matSquash[tid]);
             squashFromTC(tid);
         }
 
@@ -880,10 +902,6 @@ DefaultCommit<Impl>::commitInsts()
             // Record that the number of ROB entries has changed.
             changedROBNumEntries[tid] = true;
         } else {
-            PC[tid] = head_inst->readPC();
-            nextPC[tid] = head_inst->readNextPC();
-            nextNPC[tid] = head_inst->readNextNPC();
-            nextMicroPC[tid] = head_inst->readNextMicroPC();
 
             // Increment the total number of non-speculative instructions
             // executed.
@@ -896,6 +914,12 @@ DefaultCommit<Impl>::commitInsts()
             bool commit_success = commitHead(head_inst, num_committed);
 
             if (commit_success) {
+
+                PC[tid] = head_inst->readPC();
+                nextPC[tid] = head_inst->readNextPC();
+                nextNPC[tid] = head_inst->readNextNPC();
+                nextMicroPC[tid] = head_inst->readNextMicroPC();
+
                 ++num_committed;
 
                 changedROBNumEntries[tid] = true;
@@ -932,6 +956,9 @@ DefaultCommit<Impl>::commitInsts()
                             "PC skip function event, stopping commit\n");
                     break;
                 }
+            } else if (matSquash[tid]) {
+                squashFromMAT(tid);
+                break;
             } else {
                 DPRINTF(Commit, "Unable to commit head instruction PC:%#x "
                         "[tid:%i] [sn:%i].\n",
@@ -1021,9 +1048,25 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
     Fault inst_fault = head_inst->getFault();
 
     // Stores mark themselves as completed.
-    if (!head_inst->isStore() && inst_fault == NoFault) {
-        head_inst->setCompleted();
-    }
+//    if (!head_inst->isStore() && inst_fault == NoFault) {
+//        head_inst->setCompleted();
+//    }
+    if (inst_fault == NoFault) {
+		if (head_inst->isLoad()) {
+			if (!iewStage->ldstQueue.preCommitLoad(head_inst, tid)){
+                matSquash[tid] = true;
+                return false;
+            }
+		} else if (head_inst->isStore()) {
+		    if (!iewStage->ldstQueue.preCommitStore(head_inst, tid)){
+                matSquash[tid] = true;
+                return false;
+            }
+		} else {
+            matSquash[tid] = false;
+		    head_inst->setCompleted();
+		}
+	}
 
 #if USE_CHECKER
     // Use checker prior to updating anything due to traps or PC

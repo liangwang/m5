@@ -445,7 +445,7 @@ template<class Impl>
 void
 DefaultIEW<Impl>::squashDueToBranch(DynInstPtr &inst, ThreadID tid)
 {
-  DPRINTF(IEW, "[tid:%i]: Squashing from a specific instruction, PC: %#x "
+  DPRINTF(IEW, "[tid:%i]: Squashing from a specific instruction(branch), PC: %#x "
           "[sn:%i].\n", tid, inst->readPC(), inst->seqNum);
 
   toCommit->squash[tid] = true;
@@ -476,7 +476,7 @@ template<class Impl>
 void
 DefaultIEW<Impl>::squashDueToMemOrder(DynInstPtr &inst, ThreadID tid)
 {
-  DPRINTF(IEW, "[tid:%i]: Squashing from a specific instruction, "
+  DPRINTF(IEW, "[tid:%i]: Squashing from a specific instruction(mem), "
           "PC: %#x [sn:%i].\n", tid, inst->readPC(), inst->seqNum);
 
   toCommit->squash[tid] = true;
@@ -1574,6 +1574,9 @@ DefaultIEW<Impl>::tick()
           !fromCommit->commitInfo[tid].squash &&
           !fromCommit->commitInfo[tid].robSquashing) {
 
+          DPRINTF(IEW, "Try to commit load/store/InstQueue from [sn:%lli]\n",
+		  	fromCommit->commitInfo[tid].doneSeqNum);
+		  
           ldstQueue.commitStores(fromCommit->commitInfo[tid].doneSeqNum,tid);
 
           ldstQueue.commitLoads(fromCommit->commitInfo[tid].doneSeqNum,tid);
@@ -1598,8 +1601,9 @@ DefaultIEW<Impl>::tick()
               // Tell the instruction queue that a violation has occured. (for Mem_Dep_Unit only)
               //instQueue.violation(inst, violator);
 
-              // Squash.
+              // Squash. (it will squash at the next tick)
               squashDueToMemOrder(violator,tid);
+
 
               ++memOrderViolationEvents;
               continue;
@@ -1685,4 +1689,13 @@ DefaultIEW<Impl>::updateExeInstStats(DynInstPtr &inst)
           iewExecLoadInsts[tid]++;
       }
   }
+}
+
+// o3lite:
+template <class Impl>
+void
+DefaultIEW<Impl>::squashDueToMAT(DynInstPtr &inst, ThreadID tid)
+{
+
+
 }

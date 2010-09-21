@@ -76,6 +76,7 @@ class DefaultCommit
     typedef typename CPUPol::RenameMap RenameMap;
     typedef typename CPUPol::ROB ROB;
 
+
     typedef typename CPUPol::TimeStruct TimeStruct;
     typedef typename CPUPol::FetchStruct FetchStruct;
     typedef typename CPUPol::IEWStruct IEWStruct;
@@ -171,6 +172,7 @@ class DefaultCommit
      */
     IEW *iewStage;
 
+
     /** Sets pointer to list of active threads. */
     void setActiveThreads(std::list<ThreadID> *at_ptr);
 
@@ -244,6 +246,9 @@ class DefaultCommit
 
     /** Handles squashing due to an TC write. */
     void squashFromTC(ThreadID tid);
+
+    /** Handles squashing due to a MAT violation. */
+    void squashFromMAT(ThreadID tid);
 
 #if FULL_SYSTEM
     /** Handles processing an interrupt. */
@@ -367,6 +372,10 @@ class DefaultCommit
 
     /** Records if a thread has to squash this cycle due to an XC write. */
     bool tcSquash[Impl::MaxThreads];
+
+    //o3lite
+    /** Records if a thread has to squash this cycle due to a MAT violation . */
+    bool matSquash[Impl::MaxThreads];
 
     /** Priority List used for Commit Policy */
     std::list<ThreadID> priority_list;

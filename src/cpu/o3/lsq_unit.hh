@@ -121,13 +121,19 @@ class LSQUnit {
     Fault executeStore(DynInstPtr &inst);
 
     /** Commits the head load. */
-    //void commitLoad();
-    bool commitLoad();
+    void commitLoad();
+    //bool commitLoad();
     /** Commits loads older than a specific sequence number. */
     void commitLoads(InstSeqNum &youngest_inst);
 
     /** Commits stores older than a specific sequence number. */
     void commitStores(InstSeqNum &youngest_inst);
+
+	/** Pre-commit head load, do MAT checking. */
+	bool preCommitLoad(DynInstPtr &load_inst);
+
+	/** Pre-commit head store, do MAT checking. */
+	bool preCommitStore(DynInstPtr &store_inst);	
 
     /** Writes back stores. */
     void writebackStores();
@@ -219,9 +225,10 @@ class LSQUnit {
     /** Handles doing the retry. */
     void recvRetry();
 
-    void matExecuteLoad(DynInstPtr inst);
-    bool matCommitLoad(DynInstPtr inst);
-    void matCommitStore(DynInstPtr inst);
+    void matExecuteLoad(DynInstPtr &inst);
+    bool matCommitLoad(DynInstPtr &inst);
+    void matCommitStore(DynInstPtr &inst);
+	inline int getMatIdx(DynInstPtr &inst);
 
   private:
     /** Writes back the instruction, sending it to IEW. */
@@ -248,7 +255,7 @@ class LSQUnit {
     /** Decrements the given load index (circular queue). */
     inline void decrLdIdx(int &load_idx);
 
-    inline int getMatIdx(DynInstPtr inst);
+    
 
   public:
     /** Debugging function to dump instructions in the LSQ. */

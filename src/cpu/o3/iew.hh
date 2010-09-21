@@ -75,6 +75,13 @@ class DefaultIEW
     typedef typename CPUPol::RenameMap RenameMap;
     typedef typename CPUPol::LSQ LSQ;
 
+    // o3lite: commitInfo is a timebuffer which has certain
+    //         delays, while some information need to be send
+    //         to commit stage immediately, a pointer to commit
+    //         stage is added here
+    typedef typename CPUPol::Commit Commit;
+    // end of o3lite
+
     typedef typename CPUPol::TimeStruct TimeStruct;
     typedef typename CPUPol::IEWStruct IEWStruct;
     typedef typename CPUPol::RenameStruct RenameStruct;
@@ -83,6 +90,8 @@ class DefaultIEW
     friend class Impl::O3CPU;
     friend class CPUPol::IQ;
 
+    // o3lite:
+    friend class CPUPol::Commit;
   public:
     /** Overall IEW stage status. Used to determine if the CPU can
      * deschedule itself due to a lack of activity.
@@ -541,6 +550,20 @@ class DefaultIEW
 
     /** status for over-subscription */
     bool oversubStatus[Impl::MaxThreads];
+
+    /** Pointer to commit stage */
+    Commit *commitStage;
+
+    /** Sends commit proper information for a squash due to a MAT
+     * violation. The information is sent to commit at the same tick,
+     * so does not use timebuffer.
+     */
+    void squashDueToMAT(DynInstPtr &inst, ThreadID tid);
+
+  public:
+    void setCommitStage(Commit *commit_stage){
+        commitStage = commit_stage;
+    }
     // end o3lite
 };
 

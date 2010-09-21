@@ -14,7 +14,7 @@ parser.add_option("-b", "--benchmark",
                   help="Splash2 benchmark to run")
 
 # O3CPU options
-DEFAULT_WIDTH=8
+DEFAULT_WIDTH=2
 parser.add_option("--num-cpus", dest="num_cpus", type = "int",
         default = 1, help = 'number of cpus')
 parser.add_option('--numThreads', default=1, type='int',
