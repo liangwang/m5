@@ -1052,21 +1052,24 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
 //        head_inst->setCompleted();
 //    }
     if (inst_fault == NoFault) {
-		if (head_inst->isLoad()) {
-			if (!iewStage->ldstQueue.preCommitLoad(head_inst, tid)){
+        if (head_inst->isLoad() &&
+            !head_inst->isDataPrefetch()) {
+            if (!iewStage->ldstQueue.preCommitLoad(head_inst, tid)){
                 matSquash[tid] = true;
                 return false;
             }
-		} else if (head_inst->isStore()) {
-		    if (!iewStage->ldstQueue.preCommitStore(head_inst, tid)){
+        } else if (head_inst->isStore() && 
+                   !head_inst->isStoreConditional() && 
+                   !head_inst->isDataPrefetch()) {
+            if (!iewStage->ldstQueue.preCommitStore(head_inst, tid)){
                 matSquash[tid] = true;
                 return false;
             }
-		} else {
+        } else if (!head_inst->isStoreConditional()) {
             matSquash[tid] = false;
-		    head_inst->setCompleted();
-		}
-	}
+            head_inst->setCompleted();
+        }
+    }
 
 #if USE_CHECKER
     // Use checker prior to updating anything due to traps or PC
