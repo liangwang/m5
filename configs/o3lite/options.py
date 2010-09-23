@@ -30,6 +30,9 @@ parser.add_option("--SQEntries", dest="SQEntries", type="int",
 
 parser.add_option("--numSubscribers", type="int", default=2,
         help="Max number of subscribers")
+parser.add_option("--pipeWidth", type="int", default=DEFAULT_WIDTH,
+        help="Max number of pipeline width")
+
 parser.add_option("--fetchWidth", dest="fetchWidth", type="int",
                   default=DEFAULT_WIDTH,
         help="fetch width")

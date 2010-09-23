@@ -1032,10 +1032,10 @@ InstructionQueue<Impl>::squash(ThreadID tid)
     // Also tell the memory dependence unit to squash.
     memDepUnit[tid].squash(squashedSeqNum[tid], tid);
 
-    // begin o3lite 
-	// Reset all subscription structures.
-	resetAllSubscribers();
-	// end o3lite
+    // begin o3lite
+        // Reset all subscription structures.
+        resetAllSubscribers();
+        // end o3lite
 }
 
 template <class Impl>
@@ -1432,84 +1432,86 @@ template <class Impl>
 bool
 InstructionQueue<Impl>::checkOversub(DynInstPtr inst)
 {
-    bool return_val = false;
+  bool return_val = false;
 
-    assert(inst);
+  assert(inst);
 
-    DPRINTF(IQ, "begin check Oversub.\n"); // removed after debug
+  DPRINTF(IQ, "begin check Oversub.\n"); // removed after debug
 
-    ThreadID tid = inst->threadNumber;
-    
-    int8_t total_src_regs = inst->numSrcRegs();
+  ThreadID tid = inst->threadNumber;
 
-    DPRINTF(IQ, "Inst PC %#x, dest reg %i/%i, src reg1 %i/%i, src reg2 %i/%i\n", inst->readPC(),
-            (inst->numDestRegs()>0)? inst->destRegIdx(0) : 9999,
-            (inst->numDestRegs()>0)? inst->renamedDestRegIdx(0) : 9999,
-            (total_src_regs >= 1)? inst->srcRegIdx(0) : 9999,
-            (total_src_regs >= 1)? inst->renamedSrcRegIdx(0) : 9999,
-            (total_src_regs >= 2)? inst->srcRegIdx(1) : 9999,
-            (total_src_regs >= 2)? inst->renamedSrcRegIdx(1) : 9999
-            );
+  int8_t total_src_regs = inst->numSrcRegs();
 
-	
-	// assert(total_src_regs <= 2); //cmoveq has three source registers???
-	if (total_src_regs > 2)
-		  DPRINTF(IQ, "Inst PC %#x has more than 2 source operands\n", inst->readPC());
+  DPRINTF(IQ, "Inst PC %#x, dest reg %i/%i, src reg1 %i/%i, src reg2 %i/%i\n",
+          inst->readPC(),
+          (inst->numDestRegs()>0)? inst->destRegIdx(0) : 9999,
+          (inst->numDestRegs()>0)? inst->renamedDestRegIdx(0) : 9999,
+          (total_src_regs >= 1)? inst->srcRegIdx(0) : 9999,
+          (total_src_regs >= 1)? inst->renamedSrcRegIdx(0) : 9999,
+          (total_src_regs >= 2)? inst->srcRegIdx(1) : 9999,
+          (total_src_regs >= 2)? inst->renamedSrcRegIdx(1) : 9999
+  );
 
 
-    PhysRegIndex src_reg_1;
-    for (int src_reg_idx = 0;
-         src_reg_idx < total_src_regs;
-         src_reg_idx++)
+  // assert(total_src_regs <= 2); //cmoveq has three source registers???
+  if (total_src_regs > 2)
+    DPRINTF(IQ, "Inst PC %#x has more than 2 source operands\n",
+            inst->readPC());
+
+
+  PhysRegIndex src_reg_1 = 0;
+  for (int src_reg_idx = 0;
+       src_reg_idx < total_src_regs;
+       src_reg_idx++)
     {
-        // Only add it to the dependency graph if it's not ready.
-        if (!inst->isReadySrcRegIdx(src_reg_idx)) {
-            PhysRegIndex src_reg = inst->renamedSrcRegIdx(src_reg_idx);
+      // Only add it to the dependency graph if it's not ready.
+      if (!inst->isReadySrcRegIdx(src_reg_idx)) {
+          PhysRegIndex src_reg = inst->renamedSrcRegIdx(src_reg_idx);
 
-            // if two src registers have the same index, skip the second check
-			if (src_reg_idx == 0)
-				src_reg_1 = src_reg;
-			else
-				if (src_reg == src_reg_1)
-					continue;
+          // if two src registers have the same index, skip the second check
+          if (src_reg_idx == 0)
+            src_reg_1 = src_reg;
+          else
+            if (src_reg == src_reg_1)
+              continue;
 
-            // Check the IQ's scoreboard to make sure the register
-            // hasn't become ready while the instruction was in flight
-            // between stages.  Only if it really isn't ready should
-            // it be added to the dependency graph.
-            if (src_reg >= numPhysRegs) {
-                continue;
-            } else if (regScoreboard[src_reg] == false) {
-                DPRINTF(IQ, "Instruction PC %#x has src reg %i that "
-                        "is being checked for over-subscription.\n", 
-                        inst->readPC(), src_reg);
+          // Check the IQ's scoreboard to make sure the register
+          // hasn't become ready while the instruction was in flight
+          // between stages.  Only if it really isn't ready should
+          // it be added to the dependency graph.
+          if (src_reg >= numPhysRegs) {
+              continue;
+          } else if (regScoreboard[src_reg] == false) {
+              DPRINTF(IQ, "Instruction PC %#x has src reg %i that "
+                      "is being checked for over-subscription.\n",
+                      inst->readPC(), src_reg);
 
-                DynInstPtr producer_inst= dependGraph.getProducer(src_reg);
-                InstSeqNum producer_seq = producer_inst->seqNum;
+              DynInstPtr producer_inst= dependGraph.getProducer(src_reg);
+              InstSeqNum producer_seq = producer_inst->seqNum;
 
-                if (numSubscribers[src_reg] == maxSubscribers){  
-                    if ( overSubscriber[tid][0] == 0) {
-                        overSubscriber[tid][0] = producer_seq;
-                    } else if (overSubscriber[tid][1] == 0) {
-                        overSubscriber[tid][1] = producer_seq;
-                    } else {
-                        assert(false); // there should be no more than two over-subscribers
-                    }
-                    // Change the return value to indicate that something
-                    // was added to the dependency graph.
-                    return_val = true;
+              if (numSubscribers[src_reg] == maxSubscribers){
+                  if ( overSubscriber[tid][0] == 0) {
+                      overSubscriber[tid][0] = producer_seq;
+                  } else if (overSubscriber[tid][1] == 0) {
+                      overSubscriber[tid][1] = producer_seq;
+                  } else {
+                      assert(false); // there should be no more than two over-subscribers
+                  }
+                  // Change the return value to indicate that something
+                  // was added to the dependency graph.
+                  return_val = true;
 
 
-                    DPRINTF(IQ, "over-subscription detected on Instruction PC %#x, "
-                            "src reg %i.\n",
-                            inst->readPC(), src_reg);
-                }
-            }
-        }
+                  DPRINTF(IQ, "over-subscription detected on Instruction PC %#x, "
+                          "src reg %i.\n",
+                          inst->readPC(), src_reg);
+              }
+          }
+      }
     }
 
-    DPRINTF(IQ, "end check Oversub.\n"); // removed after debug
-    return return_val;
+  DPRINTF(IQ, "end check Oversub.\n"); // removed after debug
+  return return_val;
 }
 
 
@@ -1538,11 +1540,11 @@ InstructionQueue<Impl>::completeProducer(DynInstPtr inst)
 
   if ( overSubscriber[tid][0] == seqNum) {
       overSubscriber[tid][0] = 0;
-	  ret_val = true;
+          ret_val = true;
   } else if (overSubscriber[tid][1] == seqNum) {
       overSubscriber[tid][1] = 0;
-	  ret_val = true;
-  } 
+          ret_val = true;
+  }
 
   return ret_val;
 
@@ -1558,9 +1560,10 @@ InstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
 
   // assert(total_src_regs <= 2); //cmoveq has three source registers???
   if (total_src_regs > 2)
-  	    DPRINTF(IQ, "Inst PC %#x has more than 2 source operands\n", new_inst->readPC());
+    DPRINTF(IQ, "Inst PC %#x has more than 2 source operands\n", 
+            new_inst->readPC());
 
-  PhysRegIndex src_reg_1;
+  PhysRegIndex src_reg_1 = 0;
   for (int src_reg_idx = 0;
        src_reg_idx < total_src_regs;
        src_reg_idx++)
@@ -1572,11 +1575,11 @@ InstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
               continue;
           } else if (regScoreboard[src_reg] == false) {
               if (src_reg_idx == 0)
-			  	src_reg_1 = src_reg;
-			  else
-			  	if (src_reg == src_reg_1)
-					continue;
-			  assert(numSubscribers[src_reg] < maxSubscribers);
+                src_reg_1 = src_reg;
+              else
+                if (src_reg == src_reg_1)
+                  continue;
+              assert(numSubscribers[src_reg] < maxSubscribers);
               numSubscribers[src_reg] ++;
           }
       }

@@ -1058,8 +1058,8 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
                 matSquash[tid] = true;
                 return false;
             }
-        } else if (head_inst->isStore() && 
-                   !head_inst->isStoreConditional() && 
+        } else if (head_inst->isStore() &&
+                   !head_inst->isStoreConditional() &&
                    !head_inst->isDataPrefetch()) {
             if (!iewStage->ldstQueue.preCommitStore(head_inst, tid)){
                 matSquash[tid] = true;

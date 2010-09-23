@@ -664,7 +664,7 @@ LSQUnit<Impl>::commitLoads(InstSeqNum &youngest_inst)
                   unexecuted_store = true;
                   break;
               }
-              
+
               incrStIdx(store_idx);
           }
       }
@@ -1439,7 +1439,7 @@ LSQUnit<Impl>::preCommitLoad(DynInstPtr &inst)
   }
 
   if (!matCommitLoad(inst)) {
-      DPRINTF(LSQUnit, "RAW violation detected, violator PC %#x\n", 
+      DPRINTF(LSQUnit, "RAW violation detected, violator PC %#x\n",
               inst->readPC());
       memDepViolator = inst;
       return false;
