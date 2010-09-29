@@ -1057,12 +1057,17 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
             if (!iewStage->ldstQueue.preCommitLoad(head_inst, tid)){
                 matSquash[tid] = true;
                 return false;
+            } else {
+                matSquash[tid] = false;
+                head_inst->setCompleted();
             }
         } else if (head_inst->isStore() &&
                    !head_inst->isStoreConditional() &&
                    !head_inst->isDataPrefetch()) {
+            // o3lite: commit store will not cause squash
+            matSquash[tid] = false;
             if (!iewStage->ldstQueue.preCommitStore(head_inst, tid)){
-                matSquash[tid] = true;
+                // o3lite: wait for prior unexecuted loads. ???required??? 
                 return false;
             }
         } else if (!head_inst->isStoreConditional()) {

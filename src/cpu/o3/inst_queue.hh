@@ -500,20 +500,25 @@ class InstructionQueue
 
     // begin o3lite
   public:
-    /** check whether inst(consumer) leads to over subscription. */ 
-    bool checkOversub(DynInstPtr inst);
+    /** check whether inst(consumer) leads to over subscription. */
+    bool checkOversub(DynInstPtr &inst);
 
     /** check whether inst(producer) is an over subscribed producer */
-    bool isOverSubscriber(DynInstPtr inst);
+    bool isOverSubscriber(DynInstPtr &inst);
 
     /** remove inst from overSubscriber list, return
      *  true if no more oversubscribers for the thread,
      *  else return false
      **/
-    bool completeProducer(DynInstPtr inst);
+    bool completeProducer(DynInstPtr &inst);
 
   private:
-    InstSeqNum overSubscriber[Impl::MaxThreads][2]; // assume two source registers 
+    /** Instruction sequence number of producers for each source operands for the 
+     *  over-subscribed instruction. */
+    InstSeqNum subProducers[Impl::MaxThreads][Impl::MaxSrcRegs]; // cmoveq has three source operands 
+
+    /** Instruction sequence number of over-subscribed instruction.  */
+    InstSeqNum subViolator[Impl::MaxThreads];
 
     /** Number of max subscribers. */
     int maxSubscribers;
@@ -521,11 +526,11 @@ class InstructionQueue
     /** Number of subscribers for each register. */
     std::vector<int> numSubscribers;
 
-    /** Add instruction to its subscriber, just increase the subscriber number. */
+    /** Add instruction to its subscriber, just increase the subscriber number.(obsolete) */
     void addToSubscribers(DynInstPtr &new_inst);
 
-	/** Reset all data structures realted to subscription. */
-	void resetAllSubscribers();
+    /** Reset all data structures realted to subscription. */
+    void resetAllSubscribers();
 };
 
 #endif //__CPU_O3_INST_QUEUE_HH__

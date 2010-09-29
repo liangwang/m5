@@ -481,11 +481,20 @@ DefaultIEW<Impl>::squashDueToMemOrder(DynInstPtr &inst, ThreadID tid)
 
   toCommit->squash[tid] = true;
   toCommit->squashedSeqNum[tid] = inst->seqNum;
-  toCommit->nextPC[tid] = inst->readNextPC();
-  toCommit->nextNPC[tid] = inst->readNextNPC();
+  
+  //toCommit->nextPC[tid] = inst->readNextPC();
+  // o3lite:
+  toCommit->nextPC[tid] = inst->readPC();
+
+  //toCommit->nextNPC[tid] = inst->readNextNPC();
+  // o3lite:
+  toCommit->nextNPC[tid] = inst->readNextPC();
+
   toCommit->branchMispredict[tid] = false;
 
-  toCommit->includeSquashInst[tid] = false;
+  //toCommit->includeSquashInst[tid] = false;
+  // o3lite:
+  toCommit->includeSquashInst[tid] = true;
 
   wroteToTimeBuffer = true;
 }
@@ -515,7 +524,7 @@ template<class Impl>
 void
 DefaultIEW<Impl>::block(ThreadID tid)
 {
-  DPRINTF(IEW, "[tid:%u]: Blocking.\n", tid);
+  DPRINTF(IEW, "[tid:%u]: blocking.\n", tid);
 
   if (dispatchStatus[tid] != Blocked &&
       dispatchStatus[tid] != Unblocking) {
@@ -548,6 +557,7 @@ DefaultIEW<Impl>::unblock(ThreadID tid)
 }
 
 /** not used in the whole program */
+#if 0
 template<class Impl>
 void
 DefaultIEW<Impl>::wakeDependents(DynInstPtr &inst)
@@ -568,6 +578,7 @@ DefaultIEW<Impl>::wakeDependents(DynInstPtr &inst)
   }
 
 }
+#endif
 
 template<class Impl>
 void
@@ -1367,9 +1378,7 @@ DefaultIEW<Impl>::executeInsts()
               DynInstPtr violator;
               violator = ldstQueue.getMemDepViolator(tid);
 
-              DPRINTF(IEW, "LDSTQ detected a violation.  Violator PC: "
-                      "%#x, inst PC: %#x.  Addr is: %#x.\n",
-                      violator->readPC(), inst->readPC(), inst->physEffAddr);
+              DPRINTF(IEW, "Should not be invoked\n");
 
               // Ensure the violating instruction is older than
               // current squash
@@ -1575,8 +1584,8 @@ DefaultIEW<Impl>::tick()
           !fromCommit->commitInfo[tid].robSquashing) {
 
           DPRINTF(IEW, "Try to commit load/store/InstQueue from [sn:%lli]\n",
-		  	fromCommit->commitInfo[tid].doneSeqNum);
-		  
+                        fromCommit->commitInfo[tid].doneSeqNum);
+
           ldstQueue.commitStores(fromCommit->commitInfo[tid].doneSeqNum,tid);
 
           ldstQueue.commitLoads(fromCommit->commitInfo[tid].doneSeqNum,tid);
@@ -1592,9 +1601,7 @@ DefaultIEW<Impl>::tick()
               DynInstPtr violator;
               violator = ldstQueue.getMemDepViolator(tid);
 
-              DPRINTF(IEW, "LDSTQ detected a violation after commit.  Violator PC: "
-                      "%#x.\n",
-                      violator->readPC());
+              DPRINTF(IEW, "Should not be invoked\n");
 
               fetchRedirect[tid] = true;
 
@@ -1617,8 +1624,7 @@ DefaultIEW<Impl>::tick()
               instQueue.replayMemInst(fromCommit->commitInfo[tid].uncachedLoad);
               fromCommit->commitInfo[tid].uncachedLoad->setAtCommit();
           } else {
-              instQueue.scheduleNonSpec(
-                                        fromCommit->commitInfo[tid].nonSpecSeqNum);
+              instQueue.scheduleNonSpec(fromCommit->commitInfo[tid].nonSpecSeqNum);
           }
       }
 
@@ -1691,11 +1697,3 @@ DefaultIEW<Impl>::updateExeInstStats(DynInstPtr &inst)
   }
 }
 
-// o3lite:
-template <class Impl>
-void
-DefaultIEW<Impl>::squashDueToMAT(DynInstPtr &inst, ThreadID tid)
-{
-
-
-}

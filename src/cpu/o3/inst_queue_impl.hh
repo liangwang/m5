@@ -90,12 +90,6 @@ InstructionQueue<Impl>::InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr,
     //dependency graph.
     dependGraph.resize(numPhysRegs);
 
-    // begin o3lite
-    maxSubscribers = params->numSubscribers;
-    numSubscribers.resize(numPhysRegs);
-    resetAllSubscribers();
-    // end o3lite
-
     // Resize the register scoreboard.
     regScoreboard.resize(numPhysRegs);
 
@@ -104,6 +98,12 @@ InstructionQueue<Impl>::InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr,
         memDepUnit[tid].init(params, tid);
         memDepUnit[tid].setIQ(this);
     }
+
+    // begin o3lite
+    maxSubscribers = params->numSubscribers;
+    numSubscribers.resize(numPhysRegs);
+    resetAllSubscribers();
+    // end o3lite
 
     resetState();
 
@@ -531,7 +531,7 @@ InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
 
     // begin o3lite
     // increase subscriber number
-    addToSubscribers(new_inst);
+    //addToSubscribers(new_inst);
     // end o3lite
 
     if (new_inst->isMemRef()) {
@@ -1033,9 +1033,9 @@ InstructionQueue<Impl>::squash(ThreadID tid)
     memDepUnit[tid].squash(squashedSeqNum[tid], tid);
 
     // begin o3lite
-        // Reset all subscription structures.
-        resetAllSubscribers();
-        // end o3lite
+    // Reset all subscription structures.
+    resetAllSubscribers();
+    // end o3lite
 }
 
 template <class Impl>
@@ -1430,13 +1430,11 @@ InstructionQueue<Impl>::dumpInsts()
 // begin o3lite
 template <class Impl>
 bool
-InstructionQueue<Impl>::checkOversub(DynInstPtr inst)
+InstructionQueue<Impl>::checkOversub(DynInstPtr &inst)
 {
   bool return_val = false;
 
   assert(inst);
-
-  DPRINTF(IQ, "begin check Oversub.\n"); // removed after debug
 
   ThreadID tid = inst->threadNumber;
 
@@ -1454,12 +1452,9 @@ InstructionQueue<Impl>::checkOversub(DynInstPtr inst)
 
 
   // assert(total_src_regs <= 2); //cmoveq has three source registers???
-  if (total_src_regs > 2)
-    DPRINTF(IQ, "Inst PC %#x has more than 2 source operands\n",
-            inst->readPC());
-
 
   PhysRegIndex src_reg_1 = 0;
+  PhysRegIndex src_reg_2 = 0;
   for (int src_reg_idx = 0;
        src_reg_idx < total_src_regs;
        src_reg_idx++)
@@ -1469,11 +1464,20 @@ InstructionQueue<Impl>::checkOversub(DynInstPtr inst)
           PhysRegIndex src_reg = inst->renamedSrcRegIdx(src_reg_idx);
 
           // if two src registers have the same index, skip the second check
-          if (src_reg_idx == 0)
-            src_reg_1 = src_reg;
-          else
-            if (src_reg == src_reg_1)
-              continue;
+          if (src_reg_idx == 0) {
+              // processing the first src reg.
+              src_reg_1 = src_reg;
+          } else if (src_reg_idx == 1) {
+              // processing the second src reg.
+              src_reg_2 = src_reg;
+              if (src_reg == src_reg_1)
+                continue;
+          } else { 
+              // processing the third src reg. (assume at most 3)
+              if (src_reg == src_reg_1 ||
+                  src_reg == src_reg_2)
+                continue;
+          }
 
           // Check the IQ's scoreboard to make sure the register
           // hasn't become ready while the instruction was in flight
@@ -1482,72 +1486,85 @@ InstructionQueue<Impl>::checkOversub(DynInstPtr inst)
           if (src_reg >= numPhysRegs) {
               continue;
           } else if (regScoreboard[src_reg] == false) {
-              DPRINTF(IQ, "Instruction PC %#x has src reg %i that "
-                      "is being checked for over-subscription.\n",
-                      inst->readPC(), src_reg);
 
-              DynInstPtr producer_inst= dependGraph.getProducer(src_reg);
-              InstSeqNum producer_seq = producer_inst->seqNum;
+              int numSubscribers = dependGraph.numOfDependents(src_reg);
 
-              if (numSubscribers[src_reg] == maxSubscribers){
-                  if ( overSubscriber[tid][0] == 0) {
-                      overSubscriber[tid][0] = producer_seq;
-                  } else if (overSubscriber[tid][1] == 0) {
-                      overSubscriber[tid][1] = producer_seq;
-                  } else {
-                      assert(false); // there should be no more than two over-subscribers
+              if (numSubscribers == maxSubscribers){
+                  DynInstPtr producer_inst= dependGraph.getProducer(src_reg);
+                  InstSeqNum producer_seq = producer_inst->seqNum;
+                  int subIdx = 0;
+                  bool assert_flag = false; // debug checking
+                  while (subIdx < TheISA::MaxInstSrcRegs) {
+                      if (subProducers[tid][subIdx] == 0) {
+                          subProducers[tid][subIdx] = producer_seq; 
+                          assert_flag=true;
+                          break;
+                      }
+                      subIdx ++;
                   }
-                  // Change the return value to indicate that something
-                  // was added to the dependency graph.
+
+                  assert(assert_flag); // should not have more than maxSrcRegs
+
                   return_val = true;
 
-
-                  DPRINTF(IQ, "over-subscription detected on Instruction PC %#x, "
+                  DPRINTF(IQ, "over-subscription detected on Instruction PC %#x [sn:%lli], "
                           "src reg %i.\n",
-                          inst->readPC(), src_reg);
+                          inst->readPC(), inst->seqNum, src_reg);
               }
           }
       }
     }
 
-  DPRINTF(IQ, "end check Oversub.\n"); // removed after debug
   return return_val;
 }
 
 
 template <class Impl>
 bool
-InstructionQueue<Impl>::isOverSubscriber(DynInstPtr inst)
+InstructionQueue<Impl>::isOverSubscriber(DynInstPtr &inst)
 {
     assert(inst);
 
-    ThreadID tid = inst->threadNumber;
+    bool return_val = false;
 
+    ThreadID tid = inst->threadNumber;
     InstSeqNum seqNum = inst->seqNum;
 
-    return (overSubscriber[tid][0] == seqNum) || (overSubscriber[tid][1] == seqNum);
+    for (int subIdx = 0; subIdx < TheISA::MaxInstSrcRegs; subIdx ++) {
+        if (subProducers[tid][subIdx] == seqNum) {
+          return_val = true;
+          break;
+        }
+    }
+
+    return return_val;
 }
 
 
 template <class Impl>
 bool
-InstructionQueue<Impl>::completeProducer(DynInstPtr inst)
+InstructionQueue<Impl>::completeProducer(DynInstPtr &inst)
 {
   assert(inst);
   ThreadID tid = inst->threadNumber;
   InstSeqNum seqNum = inst->seqNum;
-  bool ret_val = false;
 
-  if ( overSubscriber[tid][0] == seqNum) {
-      overSubscriber[tid][0] = 0;
-          ret_val = true;
-  } else if (overSubscriber[tid][1] == seqNum) {
-      overSubscriber[tid][1] = 0;
-          ret_val = true;
+  for (int subIdx = 0; subIdx < TheISA::MaxInstSrcRegs; subIdx ++) {
+      if (subProducers[tid][subIdx] == seqNum) {
+          subProducers[tid][subIdx] = 0;
+          break;
+      }
   }
 
-  return ret_val;
+  for (int subIdx = 0; subIdx < TheISA::MaxInstSrcRegs; subIdx ++) {
+      if (subProducers[tid][subIdx] != 0) 
+        // o3lite: If any one of the producers is not ready,
+        //         just keep holding.
+        return false;
+  }
 
+  // o3lite: All the producers are ready, resume pipeline in IEW
+  return true;
 }
 
 template <class Impl>
@@ -1560,10 +1577,11 @@ InstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
 
   // assert(total_src_regs <= 2); //cmoveq has three source registers???
   if (total_src_regs > 2)
-    DPRINTF(IQ, "Inst PC %#x has more than 2 source operands\n", 
+    DPRINTF(IQ, "Inst PC %#x has more than 2 source operands\n",
             new_inst->readPC());
 
   PhysRegIndex src_reg_1 = 0;
+  PhysRegIndex src_reg_2 = 0;
   for (int src_reg_idx = 0;
        src_reg_idx < total_src_regs;
        src_reg_idx++)
@@ -1574,6 +1592,23 @@ InstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
           if (src_reg >= numPhysRegs) {
               continue;
           } else if (regScoreboard[src_reg] == false) {
+
+              // if two src registers have the same index, skip the second check
+              if (src_reg_idx == 0) {
+                  // processing the first src reg.
+                  src_reg_1 = src_reg;
+              } else if (src_reg_idx == 1) {
+                  // processing the second src reg.
+                  src_reg_2 = src_reg;
+                  if (src_reg == src_reg_1)
+                    continue;
+              } else { 
+                  // processing the third src reg. (assume at most 3)
+                  if (src_reg == src_reg_1 ||
+                      src_reg == src_reg_2)
+                    continue;
+              }
+
               if (src_reg_idx == 0)
                 src_reg_1 = src_reg;
               else
@@ -1590,7 +1625,6 @@ template <class Impl>
 void
 InstructionQueue<Impl>::resetAllSubscribers()
 {
-
     // reset number of subscribers array
     std::vector<int>::iterator it = numSubscribers.begin();
     std::vector<int>::iterator eit = numSubscribers.end();
@@ -1599,11 +1633,10 @@ InstructionQueue<Impl>::resetAllSubscribers()
         it ++;
     }
 
-    // reset overSubscriber record array
+    // reset subProducers record array
     for (ThreadID tid = 0; tid <numThreads; tid++) {
-        overSubscriber[tid][0] = 0;
-        overSubscriber[tid][1] = 0;
+        for (int subIdx = 0; subIdx < TheISA::MaxInstSrcRegs; subIdx ++)
+          subProducers[tid][subIdx] = 0;
     }
-
 }
 

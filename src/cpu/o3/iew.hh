@@ -550,21 +550,6 @@ class DefaultIEW
 
     /** status for over-subscription */
     bool oversubStatus[Impl::MaxThreads];
-
-    /** Pointer to commit stage */
-    Commit *commitStage;
-
-    /** Sends commit proper information for a squash due to a MAT
-     * violation. The information is sent to commit at the same tick,
-     * so does not use timebuffer.
-     */
-    void squashDueToMAT(DynInstPtr &inst, ThreadID tid);
-
-  public:
-    void setCommitStage(Commit *commit_stage){
-        commitStage = commit_stage;
-    }
-    // end o3lite
 };
 
 #endif // __CPU_O3_IEW_HH__

@@ -78,7 +78,8 @@ struct O3CPUImpl
 
     enum {
       MaxWidth = 8,
-      MaxThreads = 4
+      MaxThreads = 4,
+      MaxSrcRegs = 3
     };
 };
 

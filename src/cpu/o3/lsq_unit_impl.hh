@@ -1058,6 +1058,10 @@ LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
           stallingLoadIdx = 0;
       }
 
+      // o3lite: matSquashLoad
+      if (loadQueue[load_idx]->effAddrValid)
+          matSquashLoad(loadQueue[load_idx]);
+
       // Clear the smart pointer to make sure it is decremented.
       loadQueue[load_idx]->setSquashed();
       loadQueue[load_idx] = NULL;
@@ -1132,10 +1136,6 @@ LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
       decrStIdx(store_idx);
       ++lsqSquashedStores;
   }
-
-  /** All MAT entries are reset */
-  memAliasTable.clear();
-  memAliasTable.resize(MATEntries);
 }
 
 template <class Impl>
@@ -1364,6 +1364,18 @@ LSQUnit<Impl>::dumpInsts()
 
 template <class Impl>
 void
+LSQUnit<Impl>::matSquashLoad(DynInstPtr &inst)
+{
+  assert(inst->isLoad());
+  int matIdx = getMatIdx(inst);
+  memAliasTable[matIdx].counter --;
+  if (memAliasTable[matIdx].counter == 0 &&
+      memAliasTable[matIdx].violated)
+    memAliasTable[matIdx].violated = false;
+}
+
+template <class Impl>
+void
 LSQUnit<Impl>::matExecuteLoad(DynInstPtr &inst)
 {
   assert(inst->effAddrValid);
@@ -1376,11 +1388,12 @@ bool
 LSQUnit<Impl>::matCommitLoad(DynInstPtr &inst)
 {
   int matIdx = getMatIdx(inst);
-  memAliasTable[matIdx].counter --;
-  if (memAliasTable[matIdx].violated)
-    return false;
-  else
-    return true;
+  if (memAliasTable[matIdx].violated) {
+      return false;
+  } else {
+      memAliasTable[matIdx].counter --;
+      return true;
+  }
 }
 
 
@@ -1390,7 +1403,7 @@ LSQUnit<Impl>::matCommitStore(DynInstPtr &inst)
 {
   int matIdx = getMatIdx(inst);
   if (memAliasTable[matIdx].counter != 0)
-    memAliasTable[matIdx].violated= 1;
+    memAliasTable[matIdx].violated= true;
 }
 
 template <class Impl>

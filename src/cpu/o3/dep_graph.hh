@@ -103,6 +103,9 @@ class DependencyGraph
     DynInstPtr getProducer(PhysRegIndex idx)
     { return dependGraph[idx].inst; }
 
+    /** Get the number of dependents/subscribers for a given register/producer*/
+    int numOfDependents(PhysRegIndex idx);
+
   private:
     /** Array of linked lists.  Each linked list is a list of all the
      *  instructions that depend upon a given register.  The actual
@@ -119,6 +122,9 @@ class DependencyGraph
     // Debug variable, remove when done testing.
     unsigned memAllocCounter;
 
+    /** Number of dependents/subscribers for each producer. */
+    std::vector<int> numDependents;
+
   public:
     // Debug variable, remove when done testing.
     uint64_t nodesTraversed;
@@ -133,12 +139,16 @@ DependencyGraph<DynInstPtr>::~DependencyGraph()
     delete [] dependGraph;
 }
 
+// o3lite: memory leakage if multiple calls to resize()
 template <class DynInstPtr>
 void
 DependencyGraph<DynInstPtr>::resize(int num_entries)
 {
     numEntries = num_entries;
     dependGraph = new DepEntry[numEntries];
+
+    numDependents.clear();
+    numDependents.resize(numEntries, 0);
 }
 
 template <class DynInstPtr>
@@ -168,6 +178,9 @@ DependencyGraph<DynInstPtr>::reset()
 
         dependGraph[i].next = NULL;
   }
+
+    numDependents.clear();
+    numDependents.resize(numEntries, 0);
 }
 
 template <class DynInstPtr>
@@ -186,6 +199,7 @@ DependencyGraph<DynInstPtr>::insert(PhysRegIndex idx, DynInstPtr &new_inst)
   // Then actually add it to the chain.
   dependGraph[idx].next = new_entry;
 
+  numDependents[idx] ++;
   ++memAllocCounter;
 }
 
@@ -226,6 +240,8 @@ DependencyGraph<DynInstPtr>::remove(PhysRegIndex idx,
     curr->inst = NULL;
 
     delete curr;
+
+    numDependents[idx] --;
 }
 
 template <class DynInstPtr>
@@ -242,7 +258,9 @@ DependencyGraph<DynInstPtr>::pop(PhysRegIndex idx)
         memAllocCounter--;
         delete node;
     }
-    
+
+    numDependents[idx] --;
+
     return inst;
 }
 
@@ -273,6 +291,13 @@ DependencyGraph<DynInstPtr>::dump()
         cprintf("\n");
     }
     cprintf("memAllocCounter: %i\n", memAllocCounter);
+}
+
+template <class DynInstPtr>
+int
+DependencyGraph<DynInstPtr>::numOfDependents(PhysRegIndex idx)
+{
+  return numDependents[idx];
 }
 
 #endif // __CPU_O3_DEP_GRAPH_HH__

@@ -78,8 +78,8 @@ class LSQUnit {
 
     /** Initializes the LSQ unit with the specified number of entries. */
     void init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
-            LSQ *lsq_ptr, unsigned maxLQEntries, unsigned maxSQEntries, unsigned maxMATEntries,
-            unsigned id);
+            LSQ *lsq_ptr, unsigned maxLQEntries, unsigned maxSQEntries,
+            unsigned maxMATEntries, unsigned id);
 
     /** Returns the name of the LSQ unit. */
     std::string name() const;
@@ -129,11 +129,11 @@ class LSQUnit {
     /** Commits stores older than a specific sequence number. */
     void commitStores(InstSeqNum &youngest_inst);
 
-	/** Pre-commit head load, do MAT checking. */
-	bool preCommitLoad(DynInstPtr &load_inst);
+    /** Pre-commit head load, do MAT checking. */
+    bool preCommitLoad(DynInstPtr &load_inst);
 
-	/** Pre-commit head store, do MAT checking. */
-	bool preCommitStore(DynInstPtr &store_inst);	
+    /** Pre-commit head store, do MAT checking. */
+    bool preCommitStore(DynInstPtr &store_inst);
 
     /** Writes back stores. */
     void writebackStores();
@@ -225,10 +225,11 @@ class LSQUnit {
     /** Handles doing the retry. */
     void recvRetry();
 
+    void matSquashLoad(DynInstPtr &inst);
     void matExecuteLoad(DynInstPtr &inst);
     bool matCommitLoad(DynInstPtr &inst);
     void matCommitStore(DynInstPtr &inst);
-	inline int getMatIdx(DynInstPtr &inst);
+    inline int getMatIdx(DynInstPtr &inst);
 
   private:
     /** Writes back the instruction, sending it to IEW. */
@@ -255,7 +256,7 @@ class LSQUnit {
     /** Decrements the given load index (circular queue). */
     inline void decrLdIdx(int &load_idx);
 
-    
+
 
   public:
     /** Debugging function to dump instructions in the LSQ. */
@@ -369,23 +370,23 @@ class LSQUnit {
         bool completed;
     };
 
-  struct MATEntry {
-          /** Constructs an empty MAT entry. */
-          MATEntry()
-                  : counter(0), violated(false)
+    struct MATEntry {
+        /** Constructs an empty MAT entry. */
+        MATEntry()
+          : counter(0), violated(false)
           { }
 
-          /** Constructs a MAT entry for a given instruction. */
-          MATEntry(int _counter, bool _violated)
-                  : counter(_counter), violated(_violated)
+        /** Constructs a MAT entry for a given instruction. */
+        MATEntry(int _counter, bool _violated)
+          : counter(_counter), violated(_violated)
           { }
 
-          /** counter to record the number of load */
-          int counter;
+        /** counter to record the number of load */
+        int counter;
 
-          /** flag to indicate whether memory violation occured */
-          bool violated;
-  };
+        /** flag to indicate whether memory violation occured */
+        bool violated;
+    };
 
 
   private:
@@ -398,8 +399,8 @@ class LSQUnit {
     /** The load queue. */
     std::vector<DynInstPtr> loadQueue;
 
-        /** The memory alias table. */
-        std::vector<MATEntry> memAliasTable;
+    /** The memory alias table. */
+    std::vector<MATEntry> memAliasTable;
 
     /** The number of LQ entries, plus a sentinel entry (circular queue).
      *  @todo: Consider having var that records the true number of LQ entries.
@@ -410,8 +411,8 @@ class LSQUnit {
      */
     unsigned SQEntries;
 
-        /** The number of MAT entries, no sentinel entry is included. */
-        unsigned MATEntries;
+    /** The number of MAT entries, no sentinel entry is included. */
+    unsigned MATEntries;
 
 
     /** The number of load instructions in the LQ. */
@@ -611,6 +612,7 @@ LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
         load_inst->recordResult = true;
     }
 
+#if 1 // disable the store forwarding to load
     while (store_idx != -1) {
         // End once we've reached the top of the LSQ
         if (store_idx == storeWBIdx) {
@@ -731,6 +733,7 @@ LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
             return NoFault;
         }
     }
+#endif //end of disable
 
     // If there's no forwarding case, then go access memory
     DPRINTF(LSQUnit, "Doing memory access for inst [sn:%lli] PC %#x\n",

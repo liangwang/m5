@@ -261,9 +261,6 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
     rename.setIEWStage(&iew);
     rename.setCommitStage(&commit);
 
-    // o3lite:
-    iew.setCommitStage(&commit);
-
 #if !FULL_SYSTEM
     ThreadID active_threads = params->workload.size();
 
