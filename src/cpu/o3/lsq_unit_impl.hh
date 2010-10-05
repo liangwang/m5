@@ -159,6 +159,7 @@ LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
   // MAT do NOT need sentinel entry
   MATEntries = maxMATEntries;
   memAliasTable.resize(MATEntries);
+  isLoadInMAT.resize(LQEntries);
 
   usedPorts = 0;
   cachePorts = params->cachePorts;
@@ -383,6 +384,9 @@ LSQUnit<Impl>::insertLoad(DynInstPtr &load_inst)
 
   loadQueue[loadTail] = load_inst;
 
+  //o3lite: reset isLoadInMAT flag
+  isLoadInMAT[loadTail] = false;
+
   incrLdIdx(loadTail);
 
   ++loads;
@@ -491,7 +495,9 @@ LSQUnit<Impl>::executeLoad(DynInstPtr &inst)
   } else if (!loadBlocked()) {
       assert(inst->effAddrValid);
 
-      matExecuteLoad(inst);
+      if (inst->isIssued()) {
+          matExecuteLoad(inst);
+      } // else the load instruction will be replayed.
 
       //        int load_idx = inst->lqIdx;
       //        incrLdIdx(load_idx);
@@ -1058,9 +1064,12 @@ LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
           stallingLoadIdx = 0;
       }
 
-      // o3lite: matSquashLoad
-      if (loadQueue[load_idx]->effAddrValid)
+      // o3lite: matSquashLoad.
+      //         Only issued but not blocked load instruction
+      //         adds MAT counter.
+      if (isLoadInMAT[load_idx]) {
           matSquashLoad(loadQueue[load_idx]);
+      }
 
       // Clear the smart pointer to make sure it is decremented.
       loadQueue[load_idx]->setSquashed();
@@ -1207,8 +1216,25 @@ LSQUnit<Impl>::completeStore(int store_idx)
   cpu->wakeCPU();
   cpu->activityThisCycle();
 
+  // o3lite: do stuff before free entries.
+#if 0
+  if (isStalled() &&
+      storeQueue[store_idx].inst->seqNum == stallingStoreIsn) {
+      DPRINTF(LSQUnit, "Unstalling, stalling store [sn:%lli] "
+              "load idx:%i\n",
+              stallingStoreIsn, stallingLoadIdx);
+      stalled = false;
+      stallingStoreIsn = 0;
+      iewStage->replayMemInst(loadQueue[stallingLoadIdx]);
+  }
+
+  storeQueue[store_idx].inst->setCompleted();
+#endif
+
   if (store_idx == storeHead) {
       do {
+          // o3lite: free the entry immediately
+          //storeQueue[storeHead].inst = NULL;
           incrStIdx(storeHead);
 
           --stores;
@@ -1222,6 +1248,7 @@ LSQUnit<Impl>::completeStore(int store_idx)
           "idx:%i\n",
           storeQueue[store_idx].inst->seqNum, store_idx, storeHead);
 
+  // o3lite: move ahead 
   if (isStalled() &&
       storeQueue[store_idx].inst->seqNum == stallingStoreIsn) {
       DPRINTF(LSQUnit, "Unstalling, stalling store [sn:%lli] "
@@ -1232,6 +1259,7 @@ LSQUnit<Impl>::completeStore(int store_idx)
       iewStage->replayMemInst(loadQueue[stallingLoadIdx]);
   }
 
+  // o3lite: move ahead
   storeQueue[store_idx].inst->setCompleted();
 
   // Tell the checker we've completed this instruction.  Some stores
@@ -1367,7 +1395,11 @@ void
 LSQUnit<Impl>::matSquashLoad(DynInstPtr &inst)
 {
   assert(inst->isLoad());
+  assert(isLoadInMAT[inst->lqIdx] == true);
   int matIdx = getMatIdx(inst);
+
+  assert(memAliasTable[matIdx].counter > 0);
+
   memAliasTable[matIdx].counter --;
   if (memAliasTable[matIdx].counter == 0 &&
       memAliasTable[matIdx].violated)
@@ -1379,19 +1411,24 @@ void
 LSQUnit<Impl>::matExecuteLoad(DynInstPtr &inst)
 {
   assert(inst->effAddrValid);
+  assert(isLoadInMAT[inst->lqIdx] == false);
   int matIdx = getMatIdx(inst);
   memAliasTable[matIdx].counter ++;
+  isLoadInMAT[inst->lqIdx] = true;
 }
 
 template <class Impl>
 bool
 LSQUnit<Impl>::matCommitLoad(DynInstPtr &inst)
 {
+  assert(isLoadInMAT[inst->lqIdx] == true);
   int matIdx = getMatIdx(inst);
   if (memAliasTable[matIdx].violated) {
       return false;
   } else {
+      assert (memAliasTable[matIdx].counter > 0);
       memAliasTable[matIdx].counter --;
+      isLoadInMAT[inst->lqIdx] = false;
       return true;
   }
 }
@@ -1454,7 +1491,9 @@ LSQUnit<Impl>::preCommitLoad(DynInstPtr &inst)
   if (!matCommitLoad(inst)) {
       DPRINTF(LSQUnit, "RAW violation detected, violator PC %#x\n",
               inst->readPC());
-      memDepViolator = inst;
+      if (!memDepViolator ||
+          memDepViolator->seqNum > inst->seqNum)
+          memDepViolator = inst;
       return false;
   }
 

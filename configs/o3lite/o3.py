@@ -32,6 +32,8 @@ process.cmd = [options.cmd] + options.options.split()
 
 system = System(cpu = [DerivO3CPU(cpu_id = i,
     clock = '2GHz',
+    LQEntries = options.LQEntries,
+    SQEntries = options.SQEntries,
     numThreads = options.numThreads,
     fetchWidth = options.pipeWidth,
     decodeWidth = options.pipeWidth,

@@ -272,7 +272,7 @@ LSQ<Impl>::removeEntries(ThreadID tid)
 {
     thread[tid].clearLQ();
     thread[tid].clearSQ();
-        thread[tid].clearMAT();
+    thread[tid].clearMAT();
 }
 
 template<class Impl>
@@ -281,7 +281,7 @@ LSQ<Impl>::resizeEntries(unsigned size, ThreadID tid)
 {
     thread[tid].resizeLQ(size);
     thread[tid].resizeSQ(size);
-        thread[tid].resizeMAT(size);
+    thread[tid].resizeMAT(size);
 }
 
 template<class Impl>

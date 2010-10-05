@@ -419,6 +419,9 @@ DefaultIEW<Impl>::squash(ThreadID tid)
   // Tell the IQ to start squashing.
   instQueue.squash(tid);
 
+  // o3lite: clear over-sub flag.
+  oversubStatus[tid] = false;
+
   // Tell the LDSTQ to start squashing.
   ldstQueue.squash(fromCommit->commitInfo[tid].doneSeqNum, tid);
   updatedQueues = true;
@@ -481,7 +484,7 @@ DefaultIEW<Impl>::squashDueToMemOrder(DynInstPtr &inst, ThreadID tid)
 
   toCommit->squash[tid] = true;
   toCommit->squashedSeqNum[tid] = inst->seqNum;
-  
+
   //toCommit->nextPC[tid] = inst->readNextPC();
   // o3lite:
   toCommit->nextPC[tid] = inst->readPC();

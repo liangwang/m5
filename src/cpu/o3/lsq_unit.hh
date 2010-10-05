@@ -402,6 +402,9 @@ class LSQUnit {
     /** The memory alias table. */
     std::vector<MATEntry> memAliasTable;
 
+    /** The bit flag indicate whether a load is in MAT  */
+    std::vector<bool> isLoadInMAT;
+
     /** The number of LQ entries, plus a sentinel entry (circular queue).
      *  @todo: Consider having var that records the true number of LQ entries.
      */
@@ -612,7 +615,6 @@ LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
         load_inst->recordResult = true;
     }
 
-#if 1 // disable the store forwarding to load
     while (store_idx != -1) {
         // End once we've reached the top of the LSQ
         if (store_idx == storeWBIdx) {
@@ -630,6 +632,10 @@ LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
         if (store_size == 0)
             continue;
         else if (storeQueue[store_idx].inst->uncacheable())
+            continue;
+        else if (!storeQueue[store_idx].inst->isCommitted())
+            // o3lite: skip uncommitted stores, memory ordering issue
+            //         with uncommitted stores is garuanteed by MAT.
             continue;
 
         assert(storeQueue[store_idx].inst->effAddrValid);
@@ -684,9 +690,14 @@ LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
 
             ++lsqForwLoads;
             return NoFault;
-        } else if ((store_has_lower_limit && lower_load_has_store_part) ||
+        } 
+        // o3lite: disable partial forwarding
+        //  @TODO: enable it to improve performance.
+        else if ( false && (
+                 (store_has_lower_limit && lower_load_has_store_part) ||
                    (store_has_upper_limit && upper_load_has_store_part) ||
-                   (lower_load_has_store_part && upper_load_has_store_part)) {
+                   (lower_load_has_store_part && upper_load_has_store_part)) 
+                   ) {
             // This is the partial store-load forwarding case where a store
             // has only part of the load's data.
 
@@ -733,7 +744,6 @@ LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
             return NoFault;
         }
     }
-#endif //end of disable
 
     // If there's no forwarding case, then go access memory
     DPRINTF(LSQUnit, "Doing memory access for inst [sn:%lli] PC %#x\n",
