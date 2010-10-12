@@ -72,7 +72,7 @@ for i in xrange (options.num_cpus):
         system.cpu[i].workload = Cholesky()
     elif options.benchmark == 'LU_contig':
         system.cpu[i].workload = LU_contig()
-    elif options.benchmark == 'LU_noncontig()':
+    elif options.benchmark == 'LU_noncontig':
         system.cpu[i].workload = LU_noncontig()
     elif options.benchmark == 'Radix':
         system.cpu[i].workload = Radix()

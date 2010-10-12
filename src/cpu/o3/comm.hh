@@ -186,6 +186,11 @@ struct TimeBufStruct {
 
         bool interruptPending;
         bool clearInterrupt;
+
+        // o3lite: indicate there is/are store(s) commit, mark them as able
+        //         to writeback at next cycle in IEW
+        bool storeCommitted;
+        InstSeqNum youngest_store;
     };
 
     commitComm commitInfo[Impl::MaxThreads];

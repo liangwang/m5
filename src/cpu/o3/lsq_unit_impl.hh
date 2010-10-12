@@ -572,211 +572,9 @@ LSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
       ++storesToWB;
   }
 
-  /*
-     assert(store_inst->effAddrValid);
-     while (load_idx != loadTail) {
-// Really only need to check loads that have actually executed
-// It's safe to check all loads because effAddr is set to
-// InvalAddr when the dyn inst is created.
-
-// @todo: For now this is extra conservative, detecting a
-// violation if the addresses match assuming all accesses
-// are quad word accesses.
-
-// @todo: Fix this, magic number being used here
-if (loadQueue[load_idx]->effAddrValid &&
-(loadQueue[load_idx]->effAddr >> 8) ==
-(store_inst->effAddr >> 8)) {
-// A load incorrectly passed this store.  Squash and refetch.
-// For now return a fault to show that it was unsuccessful.
-DynInstPtr violator = loadQueue[load_idx];
-if (!memDepViolator ||
-(violator->seqNum < memDepViolator->seqNum)) {
-memDepViolator = violator;
-} else {
-break;
+  return store_fault;
 }
 
-++lsqMemOrderViolation;
-
-return genMachineCheckFault();
-}
-
-incrLdIdx(load_idx);
-}
-*/
-return store_fault;
-}
-
-#if 0 //begin of o3lite version
-template <class Impl>
-bool
-LSQUnit<Impl>::commitLoad()
-{
-  assert(loadQueue[loadHead]);
-
-  DPRINTF(LSQUnit, "Committing head load instruction, PC %#x\n",
-          loadQueue[loadHead]->readPC());
-
-  DynInstPtr inst = loadQueue[loadHead];
-  if (!matCommitLoad(inst)) {
-      memDepViolator = inst;
-      inst->clearCanCommit();
-  }
-
-  loadQueue[loadHead] = NULL;
-
-  incrLdIdx(loadHead);
-
-  --loads;
-
-  if (memDepViolator)
-    return false;
-  else
-    return true;
-}
-
-template <class Impl>
-void
-LSQUnit<Impl>::commitLoads(InstSeqNum &youngest_inst)
-{
-  assert(loads == 0 || loadQueue[loadHead]);
-
-  while (loads != 0 && loadQueue[loadHead]->seqNum <= youngest_inst) {
-      DPRINTF(LSQUnit, "Try to commit head load instruction, PC %#x\n",
-              loadQueue[loadHead]->readPC());
-
-      DynInstPtr inst = loadQueue[loadHead];
-      InstSeqNum load_seq = inst->seqNum;
-
-      // o3lite: try to check all older stores to make sure
-      //         all prior stores have been executed(has valid
-      //         effAddr) so that the MAT checking is effective.
-
-      // o3lite: store_idx == -1 means no prior stores before this
-      //         load, it is safe to move on to MAT check. Otherwise,
-      //         make sure all prior stores have been executed.
-      bool unexecuted_store = false;
-      int store_idx = storeHead;
-      DynInstPtr store_inst;
-      if (stores != 0) {
-          while (store_idx != storeTail) {
-              store_inst = storeQueue[store_idx].inst;
-
-              if (store_inst->seqNum > load_seq)
-                break;
-
-              if (!store_inst->isExecuted()) {
-                  unexecuted_store = true;
-                  break;
-              }
-
-              incrStIdx(store_idx);
-          }
-      }
-
-      // o3lite: outstanding unexecuted stores, wait for those stores
-      //         to be executed.
-      if (unexecuted_store) {
-          DPRINTF(LSQUnit, "Prior unexecuted stores detected, PC %#x, load PC %#x can not commit\n",
-                  store_inst->readPC(), inst->readPC());
-
-          inst->clearCanCommit();
-          break;
-      }
-
-      // o3lite: check memory violation with MAT.
-      if (!matCommitLoad(inst)) {
-          DPRINTF(LSQUnit, "RAW violation detected, violator PC %#x\n",
-                  inst->readPC());
-
-          memDepViolator = inst;
-          inst->clearCanCommit();
-          break;
-      }
-
-      // o3lite: no violation, continue with normal commit
-      inst->setCanCommit();
-      loadQueue[loadHead] = NULL;
-      incrLdIdx(loadHead);
-      -- loads;
-  }
-}
-
-template <class Impl>
-void
-LSQUnit<Impl>::commitStores(InstSeqNum &youngest_inst)
-{
-  assert(stores == 0 || storeQueue[storeHead].inst);
-
-  int store_idx = storeHead;
-
-  while (store_idx != storeTail) {
-      assert(storeQueue[store_idx].inst);
-      // Mark any stores that are now committed and have not yet
-      // been marked as able to write back.
-
-      // o3lite: check whether there exists any prior unexecuted load
-      //         instructions.
-      DynInstPtr inst = storeQueue[store_idx].inst;
-      InstSeqNum store_seq = inst->seqNum;
-      int load_idx = loadHead;
-      DynInstPtr load_inst;
-      bool unexecuted_load = false;
-      if (loads != 0) {
-          while (load_idx != loadTail) {
-              load_inst = loadQueue[load_idx];
-
-              if (load_inst->seqNum > store_seq)
-                break;
-
-              if (!load_inst->isExecuted()){
-                  unexecuted_load = true;
-                  break;
-              }
-
-              incrLdIdx(load_idx);
-          }
-      }
-
-      if (unexecuted_load){
-          DPRINTF(LSQUnit, "Prior unexecuted Load detected, PC %#x, store PC %#x can not commit\n",
-                  load_inst->readPC(), inst->readPC());
-
-          storeQueue[store_idx].canWB = false;
-          break;
-      }
-      // o3lite: end of check.
-
-      if (!storeQueue[store_idx].canWB) {
-          // make sure it is older store than youngest_inst
-          if (storeQueue[store_idx].inst->seqNum > youngest_inst) {
-              break;
-          }
-
-          // ?? why this condition is added to o3lite??
-          /*
-             if ( loads != 0 &&
-             storeQueue[store_idx].inst->seqNum > loadQueue[loadHead]->seqNum) {
-             break;
-             }
-             */
-          DPRINTF(LSQUnit, "Marking store as able to write back, PC "
-                  "%#x [sn:%lli]\n",
-                  storeQueue[store_idx].inst->readPC(),
-                  storeQueue[store_idx].inst->seqNum);
-
-          storeQueue[store_idx].canWB = true;
-
-          matCommitStore(storeQueue[store_idx].inst);
-
-          ++storesToWB;
-      }
-
-      incrStIdx(store_idx);
-  }
-}
-#endif //end of o3lite version
 
 template <class Impl>
 void
@@ -1248,7 +1046,7 @@ LSQUnit<Impl>::completeStore(int store_idx)
           "idx:%i\n",
           storeQueue[store_idx].inst->seqNum, store_idx, storeHead);
 
-  // o3lite: move ahead 
+  // o3lite: move ahead
   if (isStalled() &&
       storeQueue[store_idx].inst->seqNum == stallingStoreIsn) {
       DPRINTF(LSQUnit, "Unstalling, stalling store [sn:%lli] "
@@ -1538,6 +1336,8 @@ LSQUnit<Impl>::preCommitStore(DynInstPtr &inst)
   }
 
   matCommitStore(inst);
+
+  storeQueue[inst->sqIdx].preCommitted = true;
 
   return true;
 }

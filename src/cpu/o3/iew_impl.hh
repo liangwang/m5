@@ -1580,16 +1580,37 @@ DefaultIEW<Impl>::tick()
       ThreadID tid = (*threads++);
 
       DPRINTF(IEW,"Processing [tid:%i]\n",tid);
+      DPRINTF(IEW,"FromCommit: storeCommitted %d, youngest store: %lli\n",
+              fromCommit->commitInfo[tid].storeCommitted,
+              fromCommit->commitInfo[tid].youngest_store);
+      DPRINTF(IEW,"FromCommit: doneSeqNum %lli, squash %d, robSquashing %d\n",
+              fromCommit->commitInfo[tid].doneSeqNum,
+              fromCommit->commitInfo[tid].squash,
+              fromCommit->commitInfo[tid].robSquashing);
+
+      // o3lite: if there are stores committed last cycle, mark
+      //         them as able to writeback. No matter it is squashing
+      //         or not.
+      if (fromCommit->commitInfo[tid].storeCommitted) {
+          DPRINTF(IEW, "Try to mark stores be able to writeback from [sn:%lli]\n",
+                  fromCommit->commitInfo[tid].youngest_store);
+
+          ldstQueue.commitStores(fromCommit->commitInfo[tid].doneSeqNum,tid);
+
+          updateLSQNextCycle = true;
+          instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
+      }
 
       // Update structures based on instructions committed.
+      // o3lite: only work with non-stores.
       if (fromCommit->commitInfo[tid].doneSeqNum != 0 &&
           !fromCommit->commitInfo[tid].squash &&
           !fromCommit->commitInfo[tid].robSquashing) {
 
-          DPRINTF(IEW, "Try to commit load/store/InstQueue from [sn:%lli]\n",
+          DPRINTF(IEW, "Try to commit load/InstQueue from [sn:%lli]\n",
                         fromCommit->commitInfo[tid].doneSeqNum);
 
-          ldstQueue.commitStores(fromCommit->commitInfo[tid].doneSeqNum,tid);
+//          ldstQueue.commitStores(fromCommit->commitInfo[tid].doneSeqNum,tid);
 
           ldstQueue.commitLoads(fromCommit->commitInfo[tid].doneSeqNum,tid);
 
@@ -1597,6 +1618,8 @@ DefaultIEW<Impl>::tick()
           instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
 
           // o3lite: check whether commit ldst lead to violation
+          //         move to commit stage at previous cycle.
+#if 0
           if (ldstQueue.violation(tid)) {
               // If there was an ordering violation, then get the
               // DynInst that caused the violation.  Note that this
@@ -1618,6 +1641,7 @@ DefaultIEW<Impl>::tick()
               ++memOrderViolationEvents;
               continue;
           }
+#endif
       }
 
       if (fromCommit->commitInfo[tid].nonSpecSeqNum != 0) {

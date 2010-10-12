@@ -1067,8 +1067,11 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
             // o3lite: commit store will not cause squash
             matSquash[tid] = false;
             if (!iewStage->ldstQueue.preCommitStore(head_inst, tid)){
-                // o3lite: wait for prior unexecuted loads. ???required??? 
+                // o3lite: wait for prior unexecuted loads. ???required???
                 return false;
+            } else {
+                toIEW->commitInfo[tid].storeCommitted = true;
+                toIEW->commitInfo[tid].youngest_store = head_inst->seqNum;
             }
         } else if (!head_inst->isStoreConditional()) {
             matSquash[tid] = false;

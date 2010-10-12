@@ -336,7 +336,7 @@ class LSQUnit {
         /** Constructs an empty store queue entry. */
         SQEntry()
             : inst(NULL), req(NULL), size(0),
-              canWB(0), committed(0), completed(0)
+              canWB(0), committed(0), preCommitted(0), completed(0)
         {
             std::memset(data, 0, sizeof(data));
         }
@@ -344,7 +344,7 @@ class LSQUnit {
         /** Constructs a store queue entry for a given instruction. */
         SQEntry(DynInstPtr &_inst)
             : inst(_inst), req(NULL), sreqLow(NULL), sreqHigh(NULL), size(0),
-              isSplit(0), canWB(0), committed(0), completed(0)
+              isSplit(0), canWB(0), committed(0), preCommitted(0), completed(0)
         {
             std::memset(data, 0, sizeof(data));
         }
@@ -366,6 +366,8 @@ class LSQUnit {
         bool canWB;
         /** Whether or not the store is committed. */
         bool committed;
+        /** o3lite: Whether or not the store is pre-committedi (with MAT)  */
+        bool preCommitted;
         /** Whether or not the store is completed. */
         bool completed;
     };
@@ -633,7 +635,7 @@ LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
             continue;
         else if (storeQueue[store_idx].inst->uncacheable())
             continue;
-        else if (!storeQueue[store_idx].inst->isCommitted())
+        else if (!storeQueue[store_idx].preCommitted)
             // o3lite: skip uncommitted stores, memory ordering issue
             //         with uncommitted stores is garuanteed by MAT.
             continue;
@@ -690,13 +692,13 @@ LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
 
             ++lsqForwLoads;
             return NoFault;
-        } 
+        }
         // o3lite: disable partial forwarding
         //  @TODO: enable it to improve performance.
-        else if ( false && (
+        else if ( true && (
                  (store_has_lower_limit && lower_load_has_store_part) ||
                    (store_has_upper_limit && upper_load_has_store_part) ||
-                   (lower_load_has_store_part && upper_load_has_store_part)) 
+                   (lower_load_has_store_part && upper_load_has_store_part))
                    ) {
             // This is the partial store-load forwarding case where a store
             // has only part of the load's data.
