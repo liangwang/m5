@@ -189,7 +189,7 @@ DependencyGraph<DynInstPtr>::insert(PhysRegIndex idx, DynInstPtr &new_inst)
 {
     //Add this new, dependent instruction at the head of the dependency
     //chain.
-  
+
     // First create the entry that will be added to the head of the
     // dependency chain.
     DepEntry *new_entry = new DepEntry;
@@ -198,7 +198,7 @@ DependencyGraph<DynInstPtr>::insert(PhysRegIndex idx, DynInstPtr &new_inst)
 
     // Then actually add it to the chain.
     dependGraph[idx].next = new_entry;
-  
+
     ++memAllocCounter;
     numDependents[idx] ++;
 }

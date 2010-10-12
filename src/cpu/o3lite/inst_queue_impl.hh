@@ -1472,7 +1472,7 @@ InstructionQueue<Impl>::checkOversub(DynInstPtr &inst)
               src_reg_2 = src_reg;
               if (src_reg == src_reg_1)
                 continue;
-          } else { 
+          } else {
               // processing the third src reg. (assume at most 3)
               if (src_reg == src_reg_1 ||
                   src_reg == src_reg_2)
@@ -1496,7 +1496,7 @@ InstructionQueue<Impl>::checkOversub(DynInstPtr &inst)
                   bool assert_flag = false; // debug checking
                   while (subIdx < TheISA::MaxInstSrcRegs) {
                       if (subProducers[tid][subIdx] == 0) {
-                          subProducers[tid][subIdx] = producer_seq; 
+                          subProducers[tid][subIdx] = producer_seq;
                           assert_flag=true;
                           break;
                       }
@@ -1557,7 +1557,7 @@ InstructionQueue<Impl>::completeProducer(DynInstPtr &inst)
   }
 
   for (int subIdx = 0; subIdx < TheISA::MaxInstSrcRegs; subIdx ++) {
-      if (subProducers[tid][subIdx] != 0) 
+      if (subProducers[tid][subIdx] != 0)
         // o3lite: If any one of the producers is not ready,
         //         just keep holding.
         return false;
@@ -1602,7 +1602,7 @@ InstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
                   src_reg_2 = src_reg;
                   if (src_reg == src_reg_1)
                     continue;
-              } else { 
+              } else {
                   // processing the third src reg. (assume at most 3)
                   if (src_reg == src_reg_1 ||
                       src_reg == src_reg_2)

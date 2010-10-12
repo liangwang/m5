@@ -160,7 +160,7 @@ LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
     MATEntries = maxMATEntries;
     memAliasTable.resize(MATEntries);
     isLoadInMAT.resize(LQEntries);
-  
+
     usedPorts = 0;
     cachePorts = params->cachePorts;
 
@@ -362,7 +362,7 @@ LSQUnit<Impl>::insertLoad(DynInstPtr &load_inst)
 
     //o3lite: reset isLoadInMAT flag
     isLoadInMAT[loadTail] = false;
-  
+
     incrLdIdx(loadTail);
 
     ++loads;
@@ -387,7 +387,7 @@ LSQUnit<Impl>::insertStore(DynInstPtr &store_inst)
     } else {
         store_inst->lqIdx = loadTail;
     }
-  
+
     storeQueue[storeTail] = SQEntry(store_inst);
 
     incrStIdx(storeTail);
@@ -470,7 +470,7 @@ LSQUnit<Impl>::executeLoad(DynInstPtr &inst)
         iewStage->activityThisCycle();
     } else if (!loadBlocked()) {
         assert(inst->effAddrValid);
-  
+
         if (inst->isIssued()) {
             matExecuteLoad(inst);
         } // else the load instruction will be replayed.
@@ -497,7 +497,7 @@ LSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
 
     // Check the recently completed loads to see if any match this store's
     // address.  If so, then we have a memory ordering violation.
-  
+
     Fault store_fault = store_inst->initiateAcc();
 
     if (storeQueue[store_idx].size == 0) {
@@ -812,7 +812,7 @@ LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
         if (isLoadInMAT[load_idx]) {
             matSquashLoad(loadQueue[load_idx]);
         }
-  
+
         // Clear the smart pointer to make sure it is decremented.
         loadQueue[load_idx]->setSquashed();
         loadQueue[load_idx] = NULL;

@@ -189,7 +189,7 @@ struct TimeBufStruct {
 
         /* **o3lite
          *  Indicate there are stores committed, mark them as able
-         *  to writeback at next cycle in IEW no matter whether or 
+         *  to writeback at next cycle in IEW no matter whether or
          *  not the squahsing happens. Mark stores as soon as possible
          *  can prevent potential deadlock.
          *

@@ -73,7 +73,7 @@ DefaultIEW<Impl>::DefaultIEW(O3CPU *_cpu, DerivO3CPUParams *params)
         dispatchStatus[tid] = Running;
         stalls[tid].commit = false;
         fetchRedirect[tid] = false;
-  
+
         // begin o3lite
         oversubStatus[tid] = false;
         // end o3lite
@@ -397,7 +397,7 @@ DefaultIEW<Impl>::takeOverFrom()
         dispatchStatus[tid] = Running;
         stalls[tid].commit = false;
         fetchRedirect[tid] = false;
-  
+
         // begin o3lite
         oversubStatus[tid] = false;
         // end o3lite
@@ -437,7 +437,7 @@ DefaultIEW<Impl>::squash(ThreadID tid)
 
         skidBuffer[tid].pop();
     }
-  
+
     // o3lite: clear over-sub flag.
     oversubStatus[tid] = false;
 
@@ -1059,27 +1059,27 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
             ++iewLSQFullEvents;
             break;
         }
-  
+
         // begin o3lite
         // check over subscription
         if (instQueue.checkOversub(inst)) {
             DPRINTF(IEW, "[tid:%i]: Issue: IQ has become over-subscribed.\n", tid);
-  
+
             // Call function to start blocking.
             block(tid);
-  
+
             // Set unblock to false. Special case where we are using
             // skidbuffer (unblocking) instructions but then we still
             // get full in the IQ.
             toRename->iewUnblock[tid] = false;
-  
+
             oversubStatus[tid] = true;
-  
+
             ++iewIQOversubEvents;
             break;
         }
         // end o3lite
-  
+
         // Otherwise issue the instruction just fine.
         if (inst->isLoad()) {
             DPRINTF(IEW, "[tid:%i]: Issue: Memory instruction "
@@ -1472,16 +1472,16 @@ DefaultIEW<Impl>::writebackInsts()
                 if (instQueue.completeProducer(inst)) {
                     // the thread needs to be wake-up,
                     // clear oversub status
-  
+
                     DPRINTF(IEW, "resume from over-subscription\n");
-  
+
                     oversubStatus[tid] = false;
-  
+
                     unblock(tid);
                 }
             }
             // end o3lite
-  
+
             if (dependents) {
                 producerInst[tid]++;
                 consumerInst[tid]+= dependents;
@@ -1566,20 +1566,20 @@ DefaultIEW<Impl>::tick()
                 fromCommit->commitInfo[tid].doneSeqNum,
                 fromCommit->commitInfo[tid].squash,
                 fromCommit->commitInfo[tid].robSquashing);
-  
+
         // o3lite: if there are stores committed last cycle, mark
         //         them as able to writeback. No matter it is squashing
         //         or not.
         if (fromCommit->commitInfo[tid].storeCommitted) {
             DPRINTF(IEW, "Try to mark stores be able to writeback from [sn:%lli]\n",
                     fromCommit->commitInfo[tid].youngest_store);
-  
+
             ldstQueue.commitStores(fromCommit->commitInfo[tid].doneSeqNum,tid);
-  
+
             updateLSQNextCycle = true;
             instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
         }
-  
+
         // Update structures based on instructions committed.
         // o3lite: only work with non-stores.
         if (fromCommit->commitInfo[tid].doneSeqNum != 0 &&
