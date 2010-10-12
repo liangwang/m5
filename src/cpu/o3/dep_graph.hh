@@ -96,7 +96,8 @@ class DependencyGraph
     /** Checks if there are any dependents on a specific register. */
     bool empty(PhysRegIndex idx) { return !dependGraph[idx].next; }
 
-    /** Debugging function to dump out the dependency graph. */
+    /** Debugging function to dump out the dependency graph.
+     */
     void dump();
 
     /** Get the producer instruction of a physical register. */
@@ -115,7 +116,6 @@ class DependencyGraph
      */
     DepEntry *dependGraph;
 
-
     /** Number of linked lists; identical to the number of registers. */
     int numEntries;
 
@@ -130,7 +130,6 @@ class DependencyGraph
     uint64_t nodesTraversed;
     // Debug variable, remove when done testing.
     uint64_t nodesRemoved;
-
 };
 
 template <class DynInstPtr>
@@ -139,7 +138,8 @@ DependencyGraph<DynInstPtr>::~DependencyGraph()
     delete [] dependGraph;
 }
 
-// o3lite: memory leakage if multiple calls to resize()
+// **o3lite
+// @TODO: memory leakage if multiple calls to resize()
 template <class DynInstPtr>
 void
 DependencyGraph<DynInstPtr>::resize(int num_entries)
@@ -177,7 +177,7 @@ DependencyGraph<DynInstPtr>::reset()
         }
 
         dependGraph[i].next = NULL;
-  }
+    }
 
     numDependents.clear();
     numDependents.resize(numEntries, 0);
@@ -187,20 +187,20 @@ template <class DynInstPtr>
 void
 DependencyGraph<DynInstPtr>::insert(PhysRegIndex idx, DynInstPtr &new_inst)
 {
-  //Add this new, dependent instruction at the head of the dependency
-  //chain.
+    //Add this new, dependent instruction at the head of the dependency
+    //chain.
+  
+    // First create the entry that will be added to the head of the
+    // dependency chain.
+    DepEntry *new_entry = new DepEntry;
+    new_entry->next = dependGraph[idx].next;
+    new_entry->inst = new_inst;
 
-  // First create the entry that will be added to the head of the
-  // dependency chain.
-  DepEntry *new_entry = new DepEntry;
-  new_entry->next = dependGraph[idx].next;
-  new_entry->inst = new_inst;
-
-  // Then actually add it to the chain.
-  dependGraph[idx].next = new_entry;
-
-  numDependents[idx] ++;
-  ++memAllocCounter;
+    // Then actually add it to the chain.
+    dependGraph[idx].next = new_entry;
+  
+    ++memAllocCounter;
+    numDependents[idx] ++;
 }
 
 

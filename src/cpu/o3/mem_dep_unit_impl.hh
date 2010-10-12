@@ -190,12 +190,13 @@ MemDepUnit<MemDepPred, Impl>::insert(DynInstPtr &inst)
 
     // If no store entry, then instruction can issue as soon as the registers
     // are ready.
-    
+
     // begin o3lite
     // O3lite: o3lite does not require MemDepUnit, so assumes there is always
     //         no dependent stores.
     store_entry = NULL;
     // end o3lite
+
     if (!store_entry) {
         DPRINTF(MemDepUnit, "No dependency for inst PC "
                 "%#x [sn:%lli].\n", inst->readPC(), inst->seqNum);

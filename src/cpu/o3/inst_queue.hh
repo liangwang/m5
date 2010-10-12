@@ -513,9 +513,9 @@ class InstructionQueue
     bool completeProducer(DynInstPtr &inst);
 
   private:
-    /** Instruction sequence number of producers for each source operands for the 
+    /** Instruction sequence number of producers for each source operands for the
      *  over-subscribed instruction. */
-    InstSeqNum subProducers[Impl::MaxThreads][Impl::MaxSrcRegs]; // cmoveq has three source operands 
+    InstSeqNum subProducers[Impl::MaxThreads][Impl::MaxSrcRegs]; // cmoveq has three source operands
 
     /** Instruction sequence number of over-subscribed instruction.  */
     InstSeqNum subViolator[Impl::MaxThreads];

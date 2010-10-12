@@ -128,13 +128,14 @@ DefaultCommit<Impl>::DefaultCommit(O3CPU *_cpu, DerivO3CPUParams *params)
         committedStores[tid] = false;
         trapSquash[tid] = false;
         tcSquash[tid] = false;
-        //o3lite:
-        matSquash[tid] = false;
         microPC[tid] = 0;
         nextMicroPC[tid] = 0;
         PC[tid] = 0;
         nextPC[tid] = 0;
         nextNPC[tid] = 0;
+
+        // **o3lite:
+        matSquash[tid] = false;
     }
 #if FULL_SYSTEM
     interrupt = NoFault;
@@ -375,7 +376,7 @@ DefaultCommit<Impl>::takeOverFrom()
         trapSquash[tid] = false;
         tcSquash[tid] = false;
 
-        //o3lite:
+        // **o3lite:
         matSquash[tid] = false;
     }
     squashCounter = 0;
@@ -556,20 +557,6 @@ DefaultCommit<Impl>::squashFromTC(ThreadID tid)
     cpu->activityThisCycle();
 
     tcSquash[tid] = false;
-}
-
-template <class Impl>
-void
-DefaultCommit<Impl>::squashFromMAT(ThreadID tid)
-{
-  squashAll(tid);
-  DPRINTF(Commit, "Squashing from MAT, restarting at PC %#x\n", PC[tid]);
-
-  thread[tid]->inSyscall = false;
-  commitStatus[tid] = ROBSquashing;
-  cpu->activityThisCycle();
-
-  matSquash[tid] = false;
 }
 
 template <class Impl>
@@ -902,6 +889,10 @@ DefaultCommit<Impl>::commitInsts()
             // Record that the number of ROB entries has changed.
             changedROBNumEntries[tid] = true;
         } else {
+            PC[tid] = head_inst->readPC();
+            nextPC[tid] = head_inst->readNextPC();
+            nextNPC[tid] = head_inst->readNextNPC();
+            nextMicroPC[tid] = head_inst->readNextMicroPC();
 
             // Increment the total number of non-speculative instructions
             // executed.
@@ -914,12 +905,6 @@ DefaultCommit<Impl>::commitInsts()
             bool commit_success = commitHead(head_inst, num_committed);
 
             if (commit_success) {
-
-                PC[tid] = head_inst->readPC();
-                nextPC[tid] = head_inst->readNextPC();
-                nextNPC[tid] = head_inst->readNextNPC();
-                nextMicroPC[tid] = head_inst->readNextMicroPC();
-
                 ++num_committed;
 
                 changedROBNumEntries[tid] = true;
@@ -1047,10 +1032,6 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
     // Check if the instruction caused a fault.  If so, trap.
     Fault inst_fault = head_inst->getFault();
 
-    // Stores mark themselves as completed.
-//    if (!head_inst->isStore() && inst_fault == NoFault) {
-//        head_inst->setCompleted();
-//    }
     if (inst_fault == NoFault) {
         if (head_inst->isLoad() &&
             !head_inst->isDataPrefetch()) {
@@ -1441,3 +1422,19 @@ DefaultCommit<Impl>::oldestReady()
         return InvalidThreadID;
     }
 }
+
+// **o3lite
+template <class Impl>
+void
+DefaultCommit<Impl>::squashFromMAT(ThreadID tid)
+{
+  squashAll(tid);
+  DPRINTF(Commit, "Squashing from MAT, restarting at PC %#x\n", PC[tid]);
+
+  thread[tid]->inSyscall = false;
+  commitStatus[tid] = ROBSquashing;
+  cpu->activityThisCycle();
+
+  matSquash[tid] = false;
+}
+

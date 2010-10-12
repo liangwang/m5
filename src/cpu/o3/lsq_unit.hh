@@ -122,7 +122,6 @@ class LSQUnit {
 
     /** Commits the head load. */
     void commitLoad();
-    //bool commitLoad();
     /** Commits loads older than a specific sequence number. */
     void commitLoads(InstSeqNum &youngest_inst);
 
@@ -148,7 +147,7 @@ class LSQUnit {
     /** Clears all the entries in the SQ. */
     void clearSQ();
 
-        /** Clears all the entries in the MAT. */
+    /** Clears all the entries in the MAT. */
     void clearMAT();
 
     /** Resizes the LQ to a given size. */
@@ -225,6 +224,7 @@ class LSQUnit {
     /** Handles doing the retry. */
     void recvRetry();
 
+    /** Squash load in MAT */
     void matSquashLoad(DynInstPtr &inst);
     void matExecuteLoad(DynInstPtr &inst);
     bool matCommitLoad(DynInstPtr &inst);
@@ -255,8 +255,6 @@ class LSQUnit {
     inline void incrLdIdx(int &load_idx);
     /** Decrements the given load index (circular queue). */
     inline void decrLdIdx(int &load_idx);
-
-
 
   public:
     /** Debugging function to dump instructions in the LSQ. */
@@ -692,14 +690,9 @@ LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
 
             ++lsqForwLoads;
             return NoFault;
-        }
-        // o3lite: disable partial forwarding
-        //  @TODO: enable it to improve performance.
-        else if ( true && (
-                 (store_has_lower_limit && lower_load_has_store_part) ||
+        } else if ((store_has_lower_limit && lower_load_has_store_part) ||
                    (store_has_upper_limit && upper_load_has_store_part) ||
-                   (lower_load_has_store_part && upper_load_has_store_part))
-                   ) {
+                   (lower_load_has_store_part && upper_load_has_store_part)) {
             // This is the partial store-load forwarding case where a store
             // has only part of the load's data.
 

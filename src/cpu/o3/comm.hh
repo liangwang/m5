@@ -187,8 +187,19 @@ struct TimeBufStruct {
         bool interruptPending;
         bool clearInterrupt;
 
-        // o3lite: indicate there is/are store(s) commit, mark them as able
-        //         to writeback at next cycle in IEW
+        /* **o3lite
+         *  Indicate there are stores committed, mark them as able
+         *  to writeback at next cycle in IEW no matter whether or 
+         *  not the squahsing happens. Mark stores as soon as possible
+         *  can prevent potential deadlock.
+         *
+         *  storeCommitted: indicate committed sotres
+         *  youngest_store: Sequence number for the youngest committed
+         *                  stores. It is not redundant with doneSeqNum
+         *                  since doneSeqNum is set to instruction leading
+         *                  to squash rather than the youngest instruction
+         *                  that have been committed.
+         */
         bool storeCommitted;
         InstSeqNum youngest_store;
     };
