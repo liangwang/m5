@@ -29,7 +29,7 @@
  */
 
 #include "cpu/o3/isa_specific.hh"
-#include "cpu/o3/iew_impl.hh"
-#include "cpu/o3/inst_queue.hh"
+#include "cpu/o3lite/iew_impl.hh"
+#include "cpu/o3lite/inst_queue.hh"
 
-template class DefaultIEW<O3CPUImpl>;
+template class O3liteIEW<O3liteCPUImpl>;

@@ -28,23 +28,23 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3lite_IEW_HH__
-#define __CPU_O3lite_IEW_HH__
+#ifndef __CPU_O3_IEW_HH__
+#define __CPU_O3_IEW_HH__
 
 #include <queue>
 
 #include "base/statistics.hh"
 #include "base/timebuf.hh"
 #include "config/full_system.hh"
-#include "cpu/o3lite/comm.hh"
+#include "cpu/o3/comm.hh"
 #include "cpu/o3/scoreboard.hh"
-#include "cpu/o3lite/lsq.hh"
+#include "cpu/o3/lsq.hh"
 
-class DerivO3liteCPUParams;
+class DerivO3CPUParams;
 class FUPool;
 
 /**
- * O3liteIEW handles both single threaded and SMT IEW
+ * DefaultIEW handles both single threaded and SMT IEW
  * (issue/execute/writeback).  It handles the dispatching of
  * instructions to the LSQ/IQ as part of the issue stage, and has the
  * IQ try to issue instructions each cycle. The execute latency is
@@ -63,7 +63,7 @@ class FUPool;
  * scoreboard.
  */
 template<class Impl>
-class O3liteIEW
+class DefaultIEW
 {
   private:
     //Typedefs from Impl
@@ -113,10 +113,10 @@ class O3liteIEW
     StageStatus wbStatus;
 
   public:
-    /** Constructs a O3liteIEW with the given parameters. */
-    O3liteIEW(O3CPU *_cpu, DerivO3liteCPUParams *params);
+    /** Constructs a DefaultIEW with the given parameters. */
+    DefaultIEW(O3CPU *_cpu, DerivO3CPUParams *params);
 
-    /** Returns the name of the O3liteIEW stage. */
+    /** Returns the name of the DefaultIEW stage. */
     std::string name() const;
 
     /** Registers statistics. */
@@ -533,14 +533,6 @@ class O3liteIEW
     Stats::Formula wbFanout;
     /** Number of instructions per cycle delayed in writing back . */
     Stats::Formula wbPenalizedRate;
-
-    // begin o3lite
-  private:
-    /** Stat for number of times the IQ becomes over-subscribed. */
-    Stats::Scalar iewIQOversubEvents;
-
-    /** status for over-subscription */
-    bool oversubStatus[Impl::MaxThreads];
 };
 
 #endif // __CPU_O3_IEW_HH__

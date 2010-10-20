@@ -37,13 +37,13 @@
 #include "base/timebuf.hh"
 #include "config/the_isa.hh"
 #include "cpu/o3/fu_pool.hh"
-#include "cpu/o3lite/iew.hh"
-#include "params/DerivO3liteCPU.hh"
+#include "cpu/o3/iew.hh"
+#include "params/DerivO3CPU.hh"
 
 using namespace std;
 
 template<class Impl>
-O3liteIEW<Impl>::O3liteIEW(O3CPU *_cpu, DerivO3liteCPUParams *params)
+DefaultIEW<Impl>::DefaultIEW(O3CPU *_cpu, DerivO3CPUParams *params)
     : issueToExecQueue(params->backComSize, params->forwardComSize),
       cpu(_cpu),
       instQueue(_cpu, this, params),
@@ -73,10 +73,6 @@ O3liteIEW<Impl>::O3liteIEW(O3CPU *_cpu, DerivO3liteCPUParams *params)
         dispatchStatus[tid] = Running;
         stalls[tid].commit = false;
         fetchRedirect[tid] = false;
-
-        // begin o3lite
-        oversubStatus[tid] = false;
-        // end o3lite
     }
 
     wbMax = wbWidth * params->wbDepth;
@@ -90,14 +86,14 @@ O3liteIEW<Impl>::O3liteIEW(O3CPU *_cpu, DerivO3liteCPUParams *params)
 
 template <class Impl>
 std::string
-O3liteIEW<Impl>::name() const
+DefaultIEW<Impl>::name() const
 {
     return cpu->name() + ".iew";
 }
 
 template <class Impl>
 void
-O3liteIEW<Impl>::regStats()
+DefaultIEW<Impl>::regStats()
 {
     using namespace Stats;
 
@@ -270,7 +266,7 @@ O3liteIEW<Impl>::regStats()
 
 template<class Impl>
 void
-O3liteIEW<Impl>::initStage()
+DefaultIEW<Impl>::initStage()
 {
     for (ThreadID tid = 0; tid < numThreads; tid++) {
         toRename->iewInfo[tid].usedIQ = true;
@@ -287,7 +283,7 @@ O3liteIEW<Impl>::initStage()
 
 template<class Impl>
 void
-O3liteIEW<Impl>::setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr)
+DefaultIEW<Impl>::setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr)
 {
     timeBuffer = tb_ptr;
 
@@ -305,7 +301,7 @@ O3liteIEW<Impl>::setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr)
 
 template<class Impl>
 void
-O3liteIEW<Impl>::setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr)
+DefaultIEW<Impl>::setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr)
 {
     renameQueue = rq_ptr;
 
@@ -315,7 +311,7 @@ O3liteIEW<Impl>::setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr)
 
 template<class Impl>
 void
-O3liteIEW<Impl>::setIEWQueue(TimeBuffer<IEWStruct> *iq_ptr)
+DefaultIEW<Impl>::setIEWQueue(TimeBuffer<IEWStruct> *iq_ptr)
 {
     iewQueue = iq_ptr;
 
@@ -325,7 +321,7 @@ O3liteIEW<Impl>::setIEWQueue(TimeBuffer<IEWStruct> *iq_ptr)
 
 template<class Impl>
 void
-O3liteIEW<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
+DefaultIEW<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
 {
     activeThreads = at_ptr;
 
@@ -335,14 +331,14 @@ O3liteIEW<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
 
 template<class Impl>
 void
-O3liteIEW<Impl>::setScoreboard(Scoreboard *sb_ptr)
+DefaultIEW<Impl>::setScoreboard(Scoreboard *sb_ptr)
 {
     scoreboard = sb_ptr;
 }
 
 template <class Impl>
 bool
-O3liteIEW<Impl>::drain()
+DefaultIEW<Impl>::drain()
 {
     // IEW is ready to drain at any time.
     cpu->signalDrained();
@@ -351,13 +347,13 @@ O3liteIEW<Impl>::drain()
 
 template <class Impl>
 void
-O3liteIEW<Impl>::resume()
+DefaultIEW<Impl>::resume()
 {
 }
 
 template <class Impl>
 void
-O3liteIEW<Impl>::switchOut()
+DefaultIEW<Impl>::switchOut()
 {
     // Clear any state.
     switchedOut = true;
@@ -378,7 +374,7 @@ O3liteIEW<Impl>::switchOut()
 
 template <class Impl>
 void
-O3liteIEW<Impl>::takeOverFrom()
+DefaultIEW<Impl>::takeOverFrom()
 {
     // Reset all state.
     _status = Active;
@@ -397,10 +393,6 @@ O3liteIEW<Impl>::takeOverFrom()
         dispatchStatus[tid] = Running;
         stalls[tid].commit = false;
         fetchRedirect[tid] = false;
-
-        // begin o3lite
-        oversubStatus[tid] = false;
-        // end o3lite
     }
 
     updateLSQNextCycle = false;
@@ -412,7 +404,7 @@ O3liteIEW<Impl>::takeOverFrom()
 
 template<class Impl>
 void
-O3liteIEW<Impl>::squash(ThreadID tid)
+DefaultIEW<Impl>::squash(ThreadID tid)
 {
     DPRINTF(IEW, "[tid:%i]: Squashing all instructions.\n", tid);
 
@@ -438,17 +430,14 @@ O3liteIEW<Impl>::squash(ThreadID tid)
         skidBuffer[tid].pop();
     }
 
-    // o3lite: clear over-sub flag.
-    oversubStatus[tid] = false;
-
     emptyRenameInsts(tid);
 }
 
 template<class Impl>
 void
-O3liteIEW<Impl>::squashDueToBranch(DynInstPtr &inst, ThreadID tid)
+DefaultIEW<Impl>::squashDueToBranch(DynInstPtr &inst, ThreadID tid)
 {
-    DPRINTF(IEW, "[tid:%i]: Squashing from a specific instruction(branch), PC: %#x "
+    DPRINTF(IEW, "[tid:%i]: Squashing from a specific instruction, PC: %#x "
             "[sn:%i].\n", tid, inst->readPC(), inst->seqNum);
 
     toCommit->squash[tid] = true;
@@ -475,28 +464,27 @@ O3liteIEW<Impl>::squashDueToBranch(DynInstPtr &inst, ThreadID tid)
     wroteToTimeBuffer = true;
 }
 
-// o3lite: never got invoked for o3lite.
 template<class Impl>
 void
-O3liteIEW<Impl>::squashDueToMemOrder(DynInstPtr &inst, ThreadID tid)
+DefaultIEW<Impl>::squashDueToMemOrder(DynInstPtr &inst, ThreadID tid)
 {
-    DPRINTF(IEW, "[tid:%i]: Squashing from a specific instruction(mem), "
+    DPRINTF(IEW, "[tid:%i]: Squashing from a specific instruction, "
             "PC: %#x [sn:%i].\n", tid, inst->readPC(), inst->seqNum);
 
     toCommit->squash[tid] = true;
     toCommit->squashedSeqNum[tid] = inst->seqNum;
-    toCommit->nextPC[tid] = inst->readPC();  // o3lite
-    toCommit->nextNPC[tid] = inst->readNextPC(); // o3lite
+    toCommit->nextPC[tid] = inst->readNextPC();
+    toCommit->nextNPC[tid] = inst->readNextNPC();
     toCommit->branchMispredict[tid] = false;
 
-    toCommit->includeSquashInst[tid] = true; // o3lite
+    toCommit->includeSquashInst[tid] = false;
 
     wroteToTimeBuffer = true;
 }
 
 template<class Impl>
 void
-O3liteIEW<Impl>::squashDueToMemBlocked(DynInstPtr &inst, ThreadID tid)
+DefaultIEW<Impl>::squashDueToMemBlocked(DynInstPtr &inst, ThreadID tid)
 {
     DPRINTF(IEW, "[tid:%i]: Memory blocked, squashing load and younger insts, "
             "PC: %#x [sn:%i].\n", tid, inst->readPC(), inst->seqNum);
@@ -517,7 +505,7 @@ O3liteIEW<Impl>::squashDueToMemBlocked(DynInstPtr &inst, ThreadID tid)
 
 template<class Impl>
 void
-O3liteIEW<Impl>::block(ThreadID tid)
+DefaultIEW<Impl>::block(ThreadID tid)
 {
     DPRINTF(IEW, "[tid:%u]: Blocking.\n", tid);
 
@@ -536,7 +524,7 @@ O3liteIEW<Impl>::block(ThreadID tid)
 
 template<class Impl>
 void
-O3liteIEW<Impl>::unblock(ThreadID tid)
+DefaultIEW<Impl>::unblock(ThreadID tid)
 {
     DPRINTF(IEW, "[tid:%i]: Reading instructions out of the skid "
             "buffer %u.\n",tid, tid);
@@ -551,47 +539,30 @@ O3liteIEW<Impl>::unblock(ThreadID tid)
     }
 }
 
-/** not used in the whole program */
-#if 0
 template<class Impl>
 void
-O3liteIEW<Impl>::wakeDependents(DynInstPtr &inst)
+DefaultIEW<Impl>::wakeDependents(DynInstPtr &inst)
 {
-    ThreadID tid = inst->threadNumber;
-
-  instQueue.wakeDependents(inst);
-
-  if ( oversubStatus[tid] == true ) {
-      if (instQueue.completeProducer(inst)) {
-          // the thread needs to be wake-up,
-          // clear oversub status
-
-          oversubStatus[tid] = false;
-
-          unblock(tid);
-      }
-  }
-
+    instQueue.wakeDependents(inst);
 }
-#endif
 
 template<class Impl>
 void
-O3liteIEW<Impl>::rescheduleMemInst(DynInstPtr &inst)
+DefaultIEW<Impl>::rescheduleMemInst(DynInstPtr &inst)
 {
     instQueue.rescheduleMemInst(inst);
 }
 
 template<class Impl>
 void
-O3liteIEW<Impl>::replayMemInst(DynInstPtr &inst)
+DefaultIEW<Impl>::replayMemInst(DynInstPtr &inst)
 {
     instQueue.replayMemInst(inst);
 }
 
 template<class Impl>
 void
-O3liteIEW<Impl>::instToCommit(DynInstPtr &inst)
+DefaultIEW<Impl>::instToCommit(DynInstPtr &inst)
 {
     // This function should not be called after writebackInsts in a
     // single cycle.  That will cause problems with an instruction
@@ -622,7 +593,7 @@ O3liteIEW<Impl>::instToCommit(DynInstPtr &inst)
 
 template <class Impl>
 unsigned
-O3liteIEW<Impl>::validInstsFromRename()
+DefaultIEW<Impl>::validInstsFromRename()
 {
     unsigned inst_count = 0;
 
@@ -636,7 +607,7 @@ O3liteIEW<Impl>::validInstsFromRename()
 
 template<class Impl>
 void
-O3liteIEW<Impl>::skidInsert(ThreadID tid)
+DefaultIEW<Impl>::skidInsert(ThreadID tid)
 {
     DynInstPtr inst = NULL;
 
@@ -658,7 +629,7 @@ O3liteIEW<Impl>::skidInsert(ThreadID tid)
 
 template<class Impl>
 int
-O3liteIEW<Impl>::skidCount()
+DefaultIEW<Impl>::skidCount()
 {
     int max=0;
 
@@ -677,7 +648,7 @@ O3liteIEW<Impl>::skidCount()
 
 template<class Impl>
 bool
-O3liteIEW<Impl>::skidsEmpty()
+DefaultIEW<Impl>::skidsEmpty()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -694,7 +665,7 @@ O3liteIEW<Impl>::skidsEmpty()
 
 template <class Impl>
 void
-O3liteIEW<Impl>::updateStatus()
+DefaultIEW<Impl>::updateStatus()
 {
     bool any_unblocking = false;
 
@@ -734,7 +705,7 @@ O3liteIEW<Impl>::updateStatus()
 
 template <class Impl>
 void
-O3liteIEW<Impl>::resetEntries()
+DefaultIEW<Impl>::resetEntries()
 {
     instQueue.resetEntries();
     ldstQueue.resetEntries();
@@ -742,7 +713,7 @@ O3liteIEW<Impl>::resetEntries()
 
 template <class Impl>
 void
-O3liteIEW<Impl>::readStallSignals(ThreadID tid)
+DefaultIEW<Impl>::readStallSignals(ThreadID tid)
 {
     if (fromCommit->commitBlock[tid]) {
         stalls[tid].commit = true;
@@ -756,7 +727,7 @@ O3liteIEW<Impl>::readStallSignals(ThreadID tid)
 
 template <class Impl>
 bool
-O3liteIEW<Impl>::checkStall(ThreadID tid)
+DefaultIEW<Impl>::checkStall(ThreadID tid)
 {
     bool ret_val(false);
 
@@ -792,7 +763,7 @@ O3liteIEW<Impl>::checkStall(ThreadID tid)
 
 template <class Impl>
 void
-O3liteIEW<Impl>::checkSignalsAndUpdate(ThreadID tid)
+DefaultIEW<Impl>::checkSignalsAndUpdate(ThreadID tid)
 {
     // Check if there's a squash signal, squash if there is
     // Check stall signals, block if there is.
@@ -834,8 +805,7 @@ O3liteIEW<Impl>::checkSignalsAndUpdate(ThreadID tid)
         return;
     }
 
-    if (dispatchStatus[tid] == Blocked &&
-        oversubStatus[tid] == false) {
+    if (dispatchStatus[tid] == Blocked) {
         // Status from previous cycle was blocked, but there are no more stall
         // conditions.  Switch over to unblocking.
         DPRINTF(IEW, "[tid:%i]: Done blocking, switching to unblocking.\n",
@@ -862,13 +832,12 @@ O3liteIEW<Impl>::checkSignalsAndUpdate(ThreadID tid)
 
 template <class Impl>
 void
-O3liteIEW<Impl>::sortInsts()
+DefaultIEW<Impl>::sortInsts()
 {
     int insts_from_rename = fromRename->size;
 #ifdef DEBUG
-    //o3lite: the assertion failed for o3lite. why such assertion is only needed in debug mode?
-    //    for (ThreadID tid = 0; tid < numThreads; tid++)
-    //        assert(insts[tid].empty());
+    for (ThreadID tid = 0; tid < numThreads; tid++)
+        assert(insts[tid].empty());
 #endif
     for (int i = 0; i < insts_from_rename; ++i) {
         insts[fromRename->insts[i]->threadNumber].push(fromRename->insts[i]);
@@ -877,7 +846,7 @@ O3liteIEW<Impl>::sortInsts()
 
 template <class Impl>
 void
-O3liteIEW<Impl>::emptyRenameInsts(ThreadID tid)
+DefaultIEW<Impl>::emptyRenameInsts(ThreadID tid)
 {
     DPRINTF(IEW, "[tid:%i]: Removing incoming rename instructions\n", tid);
 
@@ -896,14 +865,14 @@ O3liteIEW<Impl>::emptyRenameInsts(ThreadID tid)
 
 template <class Impl>
 void
-O3liteIEW<Impl>::wakeCPU()
+DefaultIEW<Impl>::wakeCPU()
 {
     cpu->wakeCPU();
 }
 
 template <class Impl>
 void
-O3liteIEW<Impl>::activityThisCycle()
+DefaultIEW<Impl>::activityThisCycle()
 {
     DPRINTF(Activity, "Activity this cycle.\n");
     cpu->activityThisCycle();
@@ -911,7 +880,7 @@ O3liteIEW<Impl>::activityThisCycle()
 
 template <class Impl>
 inline void
-O3liteIEW<Impl>::activateStage()
+DefaultIEW<Impl>::activateStage()
 {
     DPRINTF(Activity, "Activating stage.\n");
     cpu->activateStage(O3CPU::IEWIdx);
@@ -919,7 +888,7 @@ O3liteIEW<Impl>::activateStage()
 
 template <class Impl>
 inline void
-O3liteIEW<Impl>::deactivateStage()
+DefaultIEW<Impl>::deactivateStage()
 {
     DPRINTF(Activity, "Deactivating stage.\n");
     cpu->deactivateStage(O3CPU::IEWIdx);
@@ -927,7 +896,7 @@ O3liteIEW<Impl>::deactivateStage()
 
 template<class Impl>
 void
-O3liteIEW<Impl>::dispatch(ThreadID tid)
+DefaultIEW<Impl>::dispatch(ThreadID tid)
 {
     // If status is Running or idle,
     //     call dispatchInsts()
@@ -975,7 +944,7 @@ O3liteIEW<Impl>::dispatch(ThreadID tid)
 
 template <class Impl>
 void
-O3liteIEW<Impl>::dispatchInsts(ThreadID tid)
+DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
 {
     // Obtain instructions from skid buffer if unblocking, or queue from rename
     // otherwise.
@@ -1059,26 +1028,6 @@ O3liteIEW<Impl>::dispatchInsts(ThreadID tid)
             ++iewLSQFullEvents;
             break;
         }
-
-        // begin o3lite
-        // check over subscription
-        if (instQueue.checkOversub(inst)) {
-            DPRINTF(IEW, "[tid:%i]: Issue: IQ has become over-subscribed.\n", tid);
-
-            // Call function to start blocking.
-            block(tid);
-
-            // Set unblock to false. Special case where we are using
-            // skidbuffer (unblocking) instructions but then we still
-            // get full in the IQ.
-            toRename->iewUnblock[tid] = false;
-
-            oversubStatus[tid] = true;
-
-            ++iewIQOversubEvents;
-            break;
-        }
-        // end o3lite
 
         // Otherwise issue the instruction just fine.
         if (inst->isLoad()) {
@@ -1194,7 +1143,7 @@ O3liteIEW<Impl>::dispatchInsts(ThreadID tid)
 
 template <class Impl>
 void
-O3liteIEW<Impl>::printAvailableInsts()
+DefaultIEW<Impl>::printAvailableInsts()
 {
     int inst = 0;
 
@@ -1217,7 +1166,7 @@ O3liteIEW<Impl>::printAvailableInsts()
 
 template <class Impl>
 void
-O3liteIEW<Impl>::executeInsts()
+DefaultIEW<Impl>::executeInsts()
 {
     wbNumInst = 0;
     wbCycle = 0;
@@ -1349,10 +1298,6 @@ O3liteIEW<Impl>::executeInsts()
                     predictedNotTakenIncorrect++;
                 }
             } else if (ldstQueue.violation(tid)) {
-                // o3lite: never reach here for o3lite.
-                // o3lite: remove this assertion since the load/store violation
-                // may come from previous store commit no matter wheather
-                // currently executed instruction is load/store.
                 assert(inst->isMemRef());
                 // If there was an ordering violation, then get the
                 // DynInst that caused the violation.  Note that this
@@ -1360,7 +1305,10 @@ O3liteIEW<Impl>::executeInsts()
                 DynInstPtr violator;
                 violator = ldstQueue.getMemDepViolator(tid);
 
-                DPRINTF(IEW, "Should not be invoked\n");
+                DPRINTF(IEW, "LDSTQ detected a violation.  Violator PC: "
+                        "%#x, inst PC: %#x.  Addr is: %#x.\n",
+                        violator->readPC(), inst->readPC(), inst->physEffAddr);
+
                 // Ensure the violating instruction is older than
                 // current squash
 /*                if (fetchRedirect[tid] &&
@@ -1435,7 +1383,7 @@ O3liteIEW<Impl>::executeInsts()
 
 template <class Impl>
 void
-O3liteIEW<Impl>::writebackInsts()
+DefaultIEW<Impl>::writebackInsts()
 {
     // Loop through the head of the time buffer and wake any
     // dependents.  These instructions are about to write back.  Also
@@ -1467,21 +1415,6 @@ O3liteIEW<Impl>::writebackInsts()
                 scoreboard->setReg(inst->renamedDestRegIdx(i));
             }
 
-            // begin o3lite
-            if ( oversubStatus[tid] == true ) {
-                if (instQueue.completeProducer(inst)) {
-                    // the thread needs to be wake-up,
-                    // clear oversub status
-
-                    DPRINTF(IEW, "resume from over-subscription\n");
-
-                    oversubStatus[tid] = false;
-
-                    unblock(tid);
-                }
-            }
-            // end o3lite
-
             if (dependents) {
                 producerInst[tid]++;
                 consumerInst[tid]+= dependents;
@@ -1495,7 +1428,7 @@ O3liteIEW<Impl>::writebackInsts()
 
 template<class Impl>
 void
-O3liteIEW<Impl>::tick()
+DefaultIEW<Impl>::tick()
 {
     wbNumInst = 0;
     wbCycle = 0;
@@ -1559,34 +1492,12 @@ O3liteIEW<Impl>::tick()
 
         DPRINTF(IEW,"Processing [tid:%i]\n",tid);
 
-        DPRINTF(IEW,"FromCommit: storeCommitted %d, youngest store: %lli\n",
-                fromCommit->commitInfo[tid].storeCommitted,
-                fromCommit->commitInfo[tid].youngest_store);
-        DPRINTF(IEW,"FromCommit: doneSeqNum %lli, squash %d, robSquashing %d\n",
-                fromCommit->commitInfo[tid].doneSeqNum,
-                fromCommit->commitInfo[tid].squash,
-                fromCommit->commitInfo[tid].robSquashing);
-
-        // o3lite: if there are stores committed last cycle, mark
-        //         them as able to writeback. No matter it is squashing
-        //         or not.
-        if (fromCommit->commitInfo[tid].storeCommitted) {
-            DPRINTF(IEW, "Try to mark stores be able to writeback from [sn:%lli]\n",
-                    fromCommit->commitInfo[tid].youngest_store);
-
-            ldstQueue.commitStores(fromCommit->commitInfo[tid].doneSeqNum,tid);
-
-            updateLSQNextCycle = true;
-            instQueue.commit(fromCommit->commitInfo[tid].doneSeqNum,tid);
-        }
-
         // Update structures based on instructions committed.
-        // o3lite: only work with non-stores.
         if (fromCommit->commitInfo[tid].doneSeqNum != 0 &&
             !fromCommit->commitInfo[tid].squash &&
             !fromCommit->commitInfo[tid].robSquashing) {
 
-//          ldstQueue.commitStores(fromCommit->commitInfo[tid].doneSeqNum,tid);
+            ldstQueue.commitStores(fromCommit->commitInfo[tid].doneSeqNum,tid);
 
             ldstQueue.commitLoads(fromCommit->commitInfo[tid].doneSeqNum,tid);
 
@@ -1641,7 +1552,7 @@ O3liteIEW<Impl>::tick()
 
 template <class Impl>
 void
-O3liteIEW<Impl>::updateExeInstStats(DynInstPtr &inst)
+DefaultIEW<Impl>::updateExeInstStats(DynInstPtr &inst)
 {
     ThreadID tid = inst->threadNumber;
 

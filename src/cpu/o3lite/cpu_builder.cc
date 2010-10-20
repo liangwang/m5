@@ -32,20 +32,20 @@
 
 #include "config/full_system.hh"
 #include "config/use_checker.hh"
-#include "cpu/o3/cpu.hh"
-#include "cpu/o3/impl.hh"
-#include "params/DerivO3CPU.hh"
+#include "cpu/o3lite/cpu.hh"
+#include "cpu/o3lite/impl.hh"
+#include "params/DerivO3liteCPU.hh"
 
-class DerivO3CPU : public FullO3CPU<O3CPUImpl>
+class DerivO3liteCPU : public FullO3liteCPU<O3CPUImpl>
 {
   public:
-    DerivO3CPU(DerivO3CPUParams *p)
-        : FullO3CPU<O3CPUImpl>(p)
+    DerivO3liteCPU(DerivO3liteCPUParams *p)
+        : FullO3liteCPU<O3CPUImpl>(p)
     { }
 };
 
-DerivO3CPU *
-DerivO3CPUParams::create()
+DerivO3liteCPU *
+DerivO3liteCPUParams::create()
 {
 #if FULL_SYSTEM
     // Full-system only supports a single thread for the moment.
@@ -57,7 +57,7 @@ DerivO3CPUParams::create()
     } else if (workload.size() == 0) {
         fatal("Must specify at least one workload!");
     }
-    
+
     // In non-full-system mode, we infer the number of threads from
     // the workload if it's not explicitly specified.
     ThreadID actual_num_threads =
@@ -77,5 +77,5 @@ DerivO3CPUParams::create()
 
     instShiftAmt = 2;
 
-    return new DerivO3CPU(this);
+    return new DerivO3liteCPU(this);
 }

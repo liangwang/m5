@@ -29,15 +29,15 @@
  *          Korey Sewell
  */
 
-#ifndef __CPU_O3lite_COMMIT_HH__
-#define __CPU_O3lite_COMMIT_HH__
+#ifndef __CPU_O3_COMMIT_HH__
+#define __CPU_O3_COMMIT_HH__
 
 #include "base/statistics.hh"
 #include "base/timebuf.hh"
 #include "cpu/exetrace.hh"
 #include "cpu/inst_seq.hh"
 
-class DerivO3liteCPUParams;
+class DerivO3CPUParams;
 
 template <class>
 class O3ThreadState;
@@ -245,10 +245,6 @@ class DefaultCommit
     /** Handles squashing due to an TC write. */
     void squashFromTC(ThreadID tid);
 
-    // **o3lite
-    /** Handles squashing due to a MAT violation. */
-    void squashFromMAT(ThreadID tid);
-
 #if FULL_SYSTEM
     /** Handles processing an interrupt. */
     void handleInterrupt();
@@ -371,10 +367,6 @@ class DefaultCommit
 
     /** Records if a thread has to squash this cycle due to an XC write. */
     bool tcSquash[Impl::MaxThreads];
-
-    // **o3lite
-    /** Records if a thread has to squash this cycle due to a MAT violation . */
-    bool matSquash[Impl::MaxThreads];
 
     /** Priority List used for Commit Policy */
     std::list<ThreadID> priority_list;

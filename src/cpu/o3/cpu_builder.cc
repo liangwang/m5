@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2005 The Regents of The University of Michigan
+ * Copyright (c) 2004-2006 The Regents of The University of Michigan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,54 @@
  * Authors: Kevin Lim
  */
 
-#include "cpu/o3/isa_specific.hh"
-#include "cpu/o3lite/commit_impl.hh"
+#include <string>
 
-template class O3liteCommit<O3liteCPUImpl>;
+#include "config/full_system.hh"
+#include "config/use_checker.hh"
+#include "cpu/o3/cpu.hh"
+#include "cpu/o3/impl.hh"
+#include "params/DerivO3CPU.hh"
+
+class DerivO3CPU : public FullO3CPU<O3CPUImpl>
+{
+  public:
+    DerivO3CPU(DerivO3CPUParams *p)
+        : FullO3CPU<O3CPUImpl>(p)
+    { }
+};
+
+DerivO3CPU *
+DerivO3CPUParams::create()
+{
+#if FULL_SYSTEM
+    // Full-system only supports a single thread for the moment.
+    ThreadID actual_num_threads = 1;
+#else
+    if (workload.size() > numThreads) {
+        fatal("Workload Size (%i) > Max Supported Threads (%i) on This CPU",
+              workload.size(), numThreads);
+    } else if (workload.size() == 0) {
+        fatal("Must specify at least one workload!");
+    }
+    
+    // In non-full-system mode, we infer the number of threads from
+    // the workload if it's not explicitly specified.
+    ThreadID actual_num_threads =
+        (numThreads >= workload.size()) ? numThreads : workload.size();
+#endif
+
+    numThreads = actual_num_threads;
+
+    // Default smtFetchPolicy to "RoundRobin", if necessary.
+    std::string round_robin_policy = "RoundRobin";
+    std::string single_thread = "SingleThread";
+
+    if (actual_num_threads > 1 && single_thread.compare(smtFetchPolicy) == 0)
+        smtFetchPolicy = round_robin_policy;
+    else
+        smtFetchPolicy = smtFetchPolicy;
+
+    instShiftAmt = 2;
+
+    return new DerivO3CPU(this);
+}

@@ -25,10 +25,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Authors: Kevin Lim
+ * Authors: Korey Sewell
  */
 
 #include "cpu/o3/isa_specific.hh"
-#include "cpu/o3lite/commit_impl.hh"
+#include "cpu/o3lite/lsq_impl.hh"
 
-template class O3liteCommit<O3liteCPUImpl>;
+// Force the instantiation of LDSTQ for all the implementations we care about.
+template class O3liteLSQ<O3liteCPUImpl>;
+

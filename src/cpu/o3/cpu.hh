@@ -29,8 +29,8 @@
  *          Korey Sewell
  */
 
-#ifndef __CPU_O3lite_CPU_HH__
-#define __CPU_O3lite_CPU_HH__
+#ifndef __CPU_O3_CPU_HH__
+#define __CPU_O3_CPU_HH__
 
 #include <iostream>
 #include <list>
@@ -47,14 +47,14 @@
 #include "cpu/activity.hh"
 #include "cpu/base.hh"
 #include "cpu/simple_thread.hh"
-#include "cpu/o3lite/comm.hh"
-#include "cpu/o3lite/cpu_policy.hh"
+#include "cpu/o3/comm.hh"
+#include "cpu/o3/cpu_policy.hh"
 #include "cpu/o3/scoreboard.hh"
 #include "cpu/o3/thread_state.hh"
 //#include "cpu/o3/thread_context.hh"
 #include "sim/process.hh"
 
-#include "params/DerivO3liteCPU.hh"
+#include "params/DerivO3CPU.hh"
 
 template <class>
 class Checker;
@@ -68,22 +68,22 @@ class Process;
 
 class BaseCPUParams;
 
-class BaseO3liteCPU : public BaseCPU
+class BaseO3CPU : public BaseCPU
 {
     //Stuff that's pretty ISA independent will go here.
   public:
-    BaseO3liteCPU(BaseCPUParams *params);
+    BaseO3CPU(BaseCPUParams *params);
 
     void regStats();
 };
 
 /**
- * FullO3liteCPU class, has each of the stages (fetch through commit)
+ * FullO3CPU class, has each of the stages (fetch through commit)
  * within it, as well as all of the time buffers between stages.  The
  * tick() function for the CPU is defined here.
  */
 template <class Impl>
-class FullO3liteCPU : public BaseO3liteCPU
+class FullO3CPU : public BaseO3CPU
 {
   public:
     // Typedefs from the Impl here.
@@ -121,11 +121,11 @@ class FullO3liteCPU : public BaseO3liteCPU
     {
       private:
         /** Pointer to the CPU. */
-        FullO3liteCPU<Impl> *cpu;
+        FullO3CPU<Impl> *cpu;
 
       public:
         /** Constructs a tick event. */
-        TickEvent(FullO3liteCPU<Impl> *c);
+        TickEvent(FullO3CPU<Impl> *c);
 
         /** Processes a tick event, calling tick() on the CPU. */
         void process();
@@ -159,14 +159,14 @@ class FullO3liteCPU : public BaseO3liteCPU
         ThreadID tid;
 
         /** Pointer to the CPU. */
-        FullO3liteCPU<Impl> *cpu;
+        FullO3CPU<Impl> *cpu;
 
       public:
         /** Constructs the event. */
         ActivateThreadEvent();
 
         /** Initialize Event */
-        void init(int thread_num, FullO3liteCPU<Impl> *thread_cpu);
+        void init(int thread_num, FullO3CPU<Impl> *thread_cpu);
 
         /** Processes the event, calling activateThread() on the CPU. */
         void process();
@@ -209,14 +209,14 @@ class FullO3liteCPU : public BaseO3liteCPU
         bool remove;
 
         /** Pointer to the CPU. */
-        FullO3liteCPU<Impl> *cpu;
+        FullO3CPU<Impl> *cpu;
 
       public:
         /** Constructs the event. */
         DeallocateContextEvent();
 
         /** Initialize Event */
-        void init(int thread_num, FullO3liteCPU<Impl> *thread_cpu);
+        void init(int thread_num, FullO3CPU<Impl> *thread_cpu);
 
         /** Processes the event, calling activateThread() on the CPU. */
         void process();
@@ -254,9 +254,9 @@ class FullO3liteCPU : public BaseO3liteCPU
 
   public:
     /** Constructs a CPU with the given parameters. */
-    FullO3liteCPU(DerivO3CPUParams *params);
+    FullO3CPU(DerivO3CPUParams *params);
     /** Destructor. */
-    ~FullO3liteCPU();
+    ~FullO3CPU();
 
     /** Registers statistics. */
     void regStats();

@@ -28,42 +28,42 @@
  * Authors: Korey Sewell
  */
 
-#ifndef __CPU_O3_LSQ_HH__
-#define __CPU_O3_LSQ_HH__
+#ifndef __CPU_O3LITE_LSQ_HH__
+#define __CPU_O3LITE_LSQ_HH__
 
 #include <map>
 #include <queue>
 
 #include "config/full_system.hh"
 #include "cpu/inst_seq.hh"
-#include "cpu/o3/lsq_unit.hh"
+#include "cpu/o3lite/lsq_unit.hh"
 #include "mem/port.hh"
 #include "sim/sim_object.hh"
 
-class DerivO3CPUParams;
+class DerivO3liteCPUParams;
 
 template <class Impl>
-class LSQ {
+class O3liteLSQ {
   public:
     typedef typename Impl::O3CPU O3CPU;
     typedef typename Impl::DynInstPtr DynInstPtr;
     typedef typename Impl::CPUPol::IEW IEW;
-    typedef typename Impl::CPUPol::LSQUnit LSQUnit;
+    typedef typename Impl::CPUPol::O3liteLSQUnit O3liteLSQUnit;
 
     /** SMT policy. */
-    enum LSQPolicy {
+    enum O3liteLSQPolicy {
         Dynamic,
         Partitioned,
         Threshold
     };
 
-    /** Constructs an LSQ with the given parameters. */
-    LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params);
+    /** Constructs an O3liteLSQ with the given parameters. */
+    O3liteLSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3liteCPUParams *params);
 
-    /** Returns the name of the LSQ. */
+    /** Returns the name of the O3liteLSQ. */
     std::string name() const;
 
-    /** Registers statistics of each LSQ unit. */
+    /** Registers statistics of each O3liteLSQ unit. */
     void regStats();
 
     /** Returns dcache port.
@@ -75,7 +75,7 @@ class LSQ {
 
     /** Sets the pointer to the list of active threads. */
     void setActiveThreads(std::list<ThreadID> *at_ptr);
-    /** Switches out the LSQ. */
+    /** Switches out the O3liteLSQ. */
     void switchOut();
     /** Takes over execution from another CPU's thread. */
     void takeOverFrom();
@@ -88,15 +88,15 @@ class LSQ {
     /** Resize the max entries for a thread. */
     void resizeEntries(unsigned size, ThreadID tid);
 
-    /** Ticks the LSQ. */
+    /** Ticks the O3liteLSQ. */
     void tick();
-    /** Ticks a specific LSQ Unit. */
+    /** Ticks a specific O3liteLSQ Unit. */
     void tick(ThreadID tid)
     { thread[tid].tick(); }
 
-    /** Inserts a load into the LSQ. */
+    /** Inserts a load into the O3liteLSQ. */
     void insertLoad(DynInstPtr &load_inst);
-    /** Inserts a store into the LSQ. */
+    /** Inserts a store into the O3liteLSQ. */
     void insertStore(DynInstPtr &store_inst);
 
     /** Executes a load. */
@@ -111,17 +111,11 @@ class LSQ {
     void commitLoads(InstSeqNum &youngest_inst, ThreadID tid)
     { thread[tid].commitLoads(youngest_inst); }
 
-    bool preCommitLoad(DynInstPtr &load_inst, ThreadID tid)
-    { return thread[tid].preCommitLoad(load_inst); }
-
     /**
      * Commits stores up until the given sequence number for a specific thread.
      */
     void commitStores(InstSeqNum &youngest_inst, ThreadID tid)
     { thread[tid].commitStores(youngest_inst); }
-
-    bool preCommitStore(DynInstPtr &store_inst, ThreadID tid)
-    { return thread[tid].preCommitStore(store_inst); }
 
     /**
      * Attempts to write back stores until all cache ports are used or the
@@ -211,10 +205,10 @@ class LSQ {
     /** Returns the number of free entries for a specific thread. */
     unsigned numFreeEntries(ThreadID tid);
 
-    /** Returns if the LSQ is full (either LQ or SQ is full). */
+    /** Returns if the O3liteLSQ is full (either LQ or SQ is full). */
     bool isFull();
     /**
-     * Returns if the LSQ is full for a specific thread (either LQ or SQ is
+     * Returns if the O3liteLSQ is full for a specific thread (either LQ or SQ is
      * full).
      */
     bool isFull(ThreadID tid);
@@ -229,16 +223,13 @@ class LSQ {
     /** Returns if the SQ of a given thread is full. */
     bool sqFull(ThreadID tid);
 
-    bool stBufFull();
-    bool stBufFull(ThreadID tid);
-
     /**
-     * Returns if the LSQ is stalled due to a memory operation that must be
+     * Returns if the O3liteLSQ is stalled due to a memory operation that must be
      * replayed.
      */
     bool isStalled();
     /**
-     * Returns if the LSQ of a specific thread is stalled due to a memory
+     * Returns if the O3liteLSQ of a specific thread is stalled due to a memory
      * operation that must be replayed.
      */
     bool isStalled(ThreadID tid);
@@ -256,9 +247,9 @@ class LSQ {
     int numStoresToWB(ThreadID tid)
     { return thread[tid].numStoresToWB(); }
 
-    /** Returns if the LSQ will write back to memory this cycle. */
+    /** Returns if the O3liteLSQ will write back to memory this cycle. */
     bool willWB();
-    /** Returns if the LSQ of a specific thread will write back to memory this
+    /** Returns if the O3liteLSQ of a specific thread will write back to memory this
      * cycle.
      */
     bool willWB(ThreadID tid)
@@ -268,7 +259,7 @@ class LSQ {
     bool cacheBlocked()
     { return retryTid != InvalidThreadID; }
 
-    /** Sets the retry thread id, indicating that one of the LSQUnits
+    /** Sets the retry thread id, indicating that one of the O3liteLSQUnits
      * tried to access the cache but the cache was blocked. */
     void setRetryTid(ThreadID tid)
     { retryTid = tid; }
@@ -299,18 +290,18 @@ class LSQ {
     /** The IEW stage pointer. */
     IEW *iewStage;
 
-    /** DcachePort class for this LSQ.  Handles doing the
+    /** DcachePort class for this O3liteLSQ.  Handles doing the
      * communication with the cache/memory.
      */
     class DcachePort : public Port
     {
       protected:
-        /** Pointer to LSQ. */
-        LSQ *lsq;
+        /** Pointer to O3liteLSQ. */
+        O3liteLSQ *lsq;
 
       public:
         /** Default constructor. */
-        DcachePort(LSQ *_lsq)
+        DcachePort(O3liteLSQ *_lsq)
             : Port(_lsq->name() + "-dport", _lsq->cpu), lsq(_lsq)
         { }
 
@@ -351,11 +342,11 @@ class LSQ {
 #endif
 
   protected:
-    /** The LSQ policy for SMT mode. */
-    LSQPolicy lsqPolicy;
+    /** The O3liteLSQ policy for SMT mode. */
+    O3liteLSQPolicy lsqPolicy;
 
-    /** The LSQ units for individual threads. */
-    LSQUnit thread[Impl::MaxThreads];
+    /** The O3liteLSQ units for individual threads. */
+    O3liteLSQUnit thread[Impl::MaxThreads];
 
     /** List of Active Threads in System. */
     std::list<ThreadID> *activeThreads;
@@ -365,22 +356,16 @@ class LSQ {
     /** Total Size of SQ Entries. */
     unsigned SQEntries;
 
-    unsigned MATEntries;
-    unsigned SBEntries;
-
     /** Max LQ Size - Used to Enforce Sharing Policies. */
     unsigned maxLQEntries;
 
     /** Max SQ Size - Used to Enforce Sharing Policies. */
     unsigned maxSQEntries;
 
-    unsigned maxMATEntries;
-    unsigned maxSBEntries;
-
     /** Number of Threads. */
     ThreadID numThreads;
 
-    /** The thread id of the LSQ Unit that is currently waiting for a
+    /** The thread id of the O3liteLSQ Unit that is currently waiting for a
      * retry. */
     ThreadID retryTid;
 };
@@ -388,7 +373,7 @@ class LSQ {
 template <class Impl>
 template <class T>
 Fault
-LSQ<Impl>::read(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
+O3liteLSQ<Impl>::read(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
                 T &data, int load_idx)
 {
     ThreadID tid = req->threadId();
@@ -399,7 +384,7 @@ LSQ<Impl>::read(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
 template <class Impl>
 template <class T>
 Fault
-LSQ<Impl>::write(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
+O3liteLSQ<Impl>::write(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
                  T &data, int store_idx)
 {
     ThreadID tid = req->threadId();
@@ -407,4 +392,4 @@ LSQ<Impl>::write(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
     return thread[tid].write(req, sreqLow, sreqHigh, data, store_idx);
 }
 
-#endif // __CPU_O3_LSQ_HH__
+#endif // __CPU_O3lite_LSQ_HH__

@@ -28,59 +28,8 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3lite_IMPL_HH__
-#define __CPU_O3lite_IMPL_HH__
+#include "cpu/o3/isa_specific.hh"
+#include "cpu/o3lite/inst_queue_impl.hh"
 
-#include "arch/isa_traits.hh"
-#include "config/the_isa.hh"
-#include "cpu/o3lite/cpu_policy.hh"
-
-
-// Forward declarations.
-template <class Impl>
-class BaseO3DynInst;
-
-template <class Impl>
-class FullO3liteCPU;
-
-/** Implementation specific struct that defines several key types to the
- *  CPU, the stages within the CPU, the time buffers, and the DynInst.
- *  The struct defines the ISA, the CPU policy, the specific DynInst, the
- *  specific O3CPU, and all of the structs from the time buffers to do
- *  communication.
- *  This is one of the key things that must be defined for each hardware
- *  specific CPU implementation.
- */
-struct O3liteCPUImpl
-{
-    /** The type of MachInst. */
-    typedef TheISA::MachInst MachInst;
-
-    /** The CPU policy to be used, which defines all of the CPU stages. */
-    typedef SimpleCPUPolicy<O3liteCPUImpl> CPUPol;
-
-    /** The DynInst type to be used. */
-    typedef BaseO3DynInst<O3liteCPUImpl> DynInst;
-
-    /** The refcounted DynInst pointer to be used.  In most cases this is
-     *  what should be used, and not DynInst *.
-     */
-    typedef RefCountingPtr<DynInst> DynInstPtr;
-
-    /** The O3CPU type to be used. */
-    typedef O3liteCPU<O3liteCPUImpl> O3CPU;
-
-    /** Same typedef, but for CPUType.  BaseDynInst may not always use
-     * an O3 CPU, so it's clearer to call it CPUType instead in that
-     * case.
-     */
-    typedef O3CPU CPUType;
-
-    enum {
-      MaxWidth = 8,
-      MaxThreads = 4,
-      MaxSrcRegs = 3
-    };
-};
-
-#endif // __CPU_O3lite_IMPL_HH__
+// Force instantiation of InstructionQueue.
+template class O3liteInstructionQueue<O3liteCPUImpl>;

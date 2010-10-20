@@ -40,9 +40,9 @@
 #include "config/the_isa.hh"
 #include "config/use_checker.hh"
 #include "cpu/exetrace.hh"
-#include "cpu/o3lite/commit.hh"
+#include "cpu/o3/commit.hh"
 #include "cpu/o3/thread_state.hh"
-#include "params/DerivO3liteCPU.hh"
+#include "params/DerivO3CPU.hh"
 
 #if USE_CHECKER
 #include "cpu/checker/cpu.hh"
@@ -51,7 +51,7 @@
 using namespace std;
 
 template <class Impl>
-O3liteCommit<Impl>::TrapEvent::TrapEvent(O3liteCommit<Impl> *_commit,
+DefaultCommit<Impl>::TrapEvent::TrapEvent(DefaultCommit<Impl> *_commit,
                                           ThreadID _tid)
     : Event(CPU_Tick_Pri), commit(_commit), tid(_tid)
 {
@@ -60,7 +60,7 @@ O3liteCommit<Impl>::TrapEvent::TrapEvent(O3liteCommit<Impl> *_commit,
 
 template <class Impl>
 void
-O3liteCommit<Impl>::TrapEvent::process()
+DefaultCommit<Impl>::TrapEvent::process()
 {
     // This will get reset by commit if it was switched out at the
     // time of this event processing.
@@ -69,13 +69,13 @@ O3liteCommit<Impl>::TrapEvent::process()
 
 template <class Impl>
 const char *
-O3liteCommit<Impl>::TrapEvent::description() const
+DefaultCommit<Impl>::TrapEvent::description() const
 {
     return "Trap";
 }
 
 template <class Impl>
-O3liteCommit<Impl>::O3liteCommit(O3CPU *_cpu, DerivO3CPUParams *params)
+DefaultCommit<Impl>::DefaultCommit(O3CPU *_cpu, DerivO3CPUParams *params)
     : cpu(_cpu),
       squashCounter(0),
       iewToCommitDelay(params->iewToCommitDelay),
@@ -133,9 +133,6 @@ O3liteCommit<Impl>::O3liteCommit(O3CPU *_cpu, DerivO3CPUParams *params)
         PC[tid] = 0;
         nextPC[tid] = 0;
         nextNPC[tid] = 0;
-
-        // **o3lite:
-        matSquash[tid] = false;
     }
 #if FULL_SYSTEM
     interrupt = NoFault;
@@ -144,14 +141,14 @@ O3liteCommit<Impl>::O3liteCommit(O3CPU *_cpu, DerivO3CPUParams *params)
 
 template <class Impl>
 std::string
-O3liteCommit<Impl>::name() const
+DefaultCommit<Impl>::name() const
 {
     return cpu->name() + ".commit";
 }
 
 template <class Impl>
 void
-O3liteCommit<Impl>::regStats()
+DefaultCommit<Impl>::regStats()
 {
     using namespace Stats;
     commitCommittedInsts
@@ -239,14 +236,14 @@ O3liteCommit<Impl>::regStats()
 
 template <class Impl>
 void
-O3liteCommit<Impl>::setThreads(std::vector<Thread *> &threads)
+DefaultCommit<Impl>::setThreads(std::vector<Thread *> &threads)
 {
     thread = threads;
 }
 
 template <class Impl>
 void
-O3liteCommit<Impl>::setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr)
+DefaultCommit<Impl>::setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr)
 {
     timeBuffer = tb_ptr;
 
@@ -259,7 +256,7 @@ O3liteCommit<Impl>::setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr)
 
 template <class Impl>
 void
-O3liteCommit<Impl>::setFetchQueue(TimeBuffer<FetchStruct> *fq_ptr)
+DefaultCommit<Impl>::setFetchQueue(TimeBuffer<FetchStruct> *fq_ptr)
 {
     fetchQueue = fq_ptr;
 
@@ -269,7 +266,7 @@ O3liteCommit<Impl>::setFetchQueue(TimeBuffer<FetchStruct> *fq_ptr)
 
 template <class Impl>
 void
-O3liteCommit<Impl>::setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr)
+DefaultCommit<Impl>::setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr)
 {
     renameQueue = rq_ptr;
 
@@ -279,7 +276,7 @@ O3liteCommit<Impl>::setRenameQueue(TimeBuffer<RenameStruct> *rq_ptr)
 
 template <class Impl>
 void
-O3liteCommit<Impl>::setIEWQueue(TimeBuffer<IEWStruct> *iq_ptr)
+DefaultCommit<Impl>::setIEWQueue(TimeBuffer<IEWStruct> *iq_ptr)
 {
     iewQueue = iq_ptr;
 
@@ -289,21 +286,21 @@ O3liteCommit<Impl>::setIEWQueue(TimeBuffer<IEWStruct> *iq_ptr)
 
 template <class Impl>
 void
-O3liteCommit<Impl>::setIEWStage(IEW *iew_stage)
+DefaultCommit<Impl>::setIEWStage(IEW *iew_stage)
 {
     iewStage = iew_stage;
 }
 
 template<class Impl>
 void
-O3liteCommit<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
+DefaultCommit<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
 {
     activeThreads = at_ptr;
 }
 
 template <class Impl>
 void
-O3liteCommit<Impl>::setRenameMap(RenameMap rm_ptr[])
+DefaultCommit<Impl>::setRenameMap(RenameMap rm_ptr[])
 {
     for (ThreadID tid = 0; tid < numThreads; tid++)
         renameMap[tid] = &rm_ptr[tid];
@@ -311,14 +308,14 @@ O3liteCommit<Impl>::setRenameMap(RenameMap rm_ptr[])
 
 template <class Impl>
 void
-O3liteCommit<Impl>::setROB(ROB *rob_ptr)
+DefaultCommit<Impl>::setROB(ROB *rob_ptr)
 {
     rob = rob_ptr;
 }
 
 template <class Impl>
 void
-O3liteCommit<Impl>::initStage()
+DefaultCommit<Impl>::initStage()
 {
     rob->setActiveThreads(activeThreads);
     rob->resetEntries();
@@ -340,7 +337,7 @@ O3liteCommit<Impl>::initStage()
 
 template <class Impl>
 bool
-O3liteCommit<Impl>::drain()
+DefaultCommit<Impl>::drain()
 {
     drainPending = true;
 
@@ -349,7 +346,7 @@ O3liteCommit<Impl>::drain()
 
 template <class Impl>
 void
-O3liteCommit<Impl>::switchOut()
+DefaultCommit<Impl>::switchOut()
 {
     switchedOut = true;
     drainPending = false;
@@ -358,14 +355,14 @@ O3liteCommit<Impl>::switchOut()
 
 template <class Impl>
 void
-O3liteCommit<Impl>::resume()
+DefaultCommit<Impl>::resume()
 {
     drainPending = false;
 }
 
 template <class Impl>
 void
-O3liteCommit<Impl>::takeOverFrom()
+DefaultCommit<Impl>::takeOverFrom()
 {
     switchedOut = false;
     _status = Active;
@@ -375,9 +372,6 @@ O3liteCommit<Impl>::takeOverFrom()
         changedROBNumEntries[tid] = false;
         trapSquash[tid] = false;
         tcSquash[tid] = false;
-
-        // **o3lite:
-        matSquash[tid] = false;
     }
     squashCounter = 0;
     rob->takeOverFrom();
@@ -385,7 +379,7 @@ O3liteCommit<Impl>::takeOverFrom()
 
 template <class Impl>
 void
-O3liteCommit<Impl>::updateStatus()
+DefaultCommit<Impl>::updateStatus()
 {
     // reset ROB changed variable
     list<ThreadID>::iterator threads = activeThreads->begin();
@@ -416,7 +410,7 @@ O3liteCommit<Impl>::updateStatus()
 
 template <class Impl>
 void
-O3liteCommit<Impl>::setNextStatus()
+DefaultCommit<Impl>::setNextStatus()
 {
     int squashes = 0;
 
@@ -442,7 +436,7 @@ O3liteCommit<Impl>::setNextStatus()
 
 template <class Impl>
 bool
-O3liteCommit<Impl>::changedROBEntries()
+DefaultCommit<Impl>::changedROBEntries()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -460,14 +454,14 @@ O3liteCommit<Impl>::changedROBEntries()
 
 template <class Impl>
 size_t
-O3liteCommit<Impl>::numROBFreeEntries(ThreadID tid)
+DefaultCommit<Impl>::numROBFreeEntries(ThreadID tid)
 {
     return rob->numFreeEntries(tid);
 }
 
 template <class Impl>
 void
-O3liteCommit<Impl>::generateTrapEvent(ThreadID tid)
+DefaultCommit<Impl>::generateTrapEvent(ThreadID tid)
 {
     DPRINTF(Commit, "Generating trap event for [tid:%i]\n", tid);
 
@@ -479,7 +473,7 @@ O3liteCommit<Impl>::generateTrapEvent(ThreadID tid)
 
 template <class Impl>
 void
-O3liteCommit<Impl>::generateTCEvent(ThreadID tid)
+DefaultCommit<Impl>::generateTCEvent(ThreadID tid)
 {
     assert(!trapInFlight[tid]);
     DPRINTF(Commit, "Generating TC squash event for [tid:%i]\n", tid);
@@ -489,7 +483,7 @@ O3liteCommit<Impl>::generateTCEvent(ThreadID tid)
 
 template <class Impl>
 void
-O3liteCommit<Impl>::squashAll(ThreadID tid)
+DefaultCommit<Impl>::squashAll(ThreadID tid)
 {
     // If we want to include the squashing instruction in the squash,
     // then use one older sequence number.
@@ -526,7 +520,7 @@ O3liteCommit<Impl>::squashAll(ThreadID tid)
 
 template <class Impl>
 void
-O3liteCommit<Impl>::squashFromTrap(ThreadID tid)
+DefaultCommit<Impl>::squashFromTrap(ThreadID tid)
 {
     squashAll(tid);
 
@@ -544,7 +538,7 @@ O3liteCommit<Impl>::squashFromTrap(ThreadID tid)
 
 template <class Impl>
 void
-O3liteCommit<Impl>::squashFromTC(ThreadID tid)
+DefaultCommit<Impl>::squashFromTC(ThreadID tid)
 {
     squashAll(tid);
 
@@ -561,7 +555,7 @@ O3liteCommit<Impl>::squashFromTC(ThreadID tid)
 
 template <class Impl>
 void
-O3liteCommit<Impl>::tick()
+DefaultCommit<Impl>::tick()
 {
     wroteToTimeBuffer = false;
     _nextStatus = Inactive;
@@ -645,7 +639,7 @@ O3liteCommit<Impl>::tick()
 #if FULL_SYSTEM
 template <class Impl>
 void
-O3liteCommit<Impl>::handleInterrupt()
+DefaultCommit<Impl>::handleInterrupt()
 {
     if (interrupt != NoFault) {
         // Wait until the ROB is empty and all stores have drained in
@@ -678,8 +672,7 @@ O3liteCommit<Impl>::handleInterrupt()
     } else if (commitStatus[0] != TrapPending &&
                cpu->checkInterrupts(cpu->tcBase(0)) &&
                !trapSquash[0] &&
-               !tcSquash[0] &&
-               !matSquash[0]) {
+               !tcSquash[0]) {
         // Process interrupts if interrupts are enabled, not in PAL
         // mode, and no other traps or external squashes are currently
         // pending.
@@ -700,7 +693,7 @@ O3liteCommit<Impl>::handleInterrupt()
 
 template <class Impl>
 void
-O3liteCommit<Impl>::commit()
+DefaultCommit<Impl>::commit()
 {
 
 #if FULL_SYSTEM
@@ -725,11 +718,9 @@ O3liteCommit<Impl>::commit()
         // both, that's a bad sign.
         if (trapSquash[tid] == true) {
             assert(!tcSquash[tid]);
-            assert(!matSquash[tid]);
             squashFromTrap(tid);
         } else if (tcSquash[tid] == true) {
             assert(commitStatus[tid] != TrapPending);
-            assert(!matSquash[tid]);
             squashFromTC(tid);
         }
 
@@ -841,7 +832,7 @@ O3liteCommit<Impl>::commit()
 
 template <class Impl>
 void
-O3liteCommit<Impl>::commitInsts()
+DefaultCommit<Impl>::commitInsts()
 {
     ////////////////////////////////////
     // Handle commit
@@ -941,9 +932,6 @@ O3liteCommit<Impl>::commitInsts()
                             "PC skip function event, stopping commit\n");
                     break;
                 }
-            } else if (matSquash[tid]) {
-                squashFromMAT(tid);
-                break;
             } else {
                 DPRINTF(Commit, "Unable to commit head instruction PC:%#x "
                         "[tid:%i] [sn:%i].\n",
@@ -963,7 +951,7 @@ O3liteCommit<Impl>::commitInsts()
 
 template <class Impl>
 bool
-O3liteCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
+DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
 {
     assert(head_inst);
 
@@ -1032,42 +1020,9 @@ O3liteCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
     // Check if the instruction caused a fault.  If so, trap.
     Fault inst_fault = head_inst->getFault();
 
-    if (inst_fault == NoFault) {
-
-        // o3lite: check whether the store buffer is full
-        if (head_inst->isStore()) {
-            if (iewStage->ldstQueue.stBufFull(tid)) {
-                DPRINTF(Commit, "Can not commit head store instruction @%llx [sn:%lli], due to store buffer is full\n",
-                        head_inst->readPC(), head_inst->seqNum);
-                return false;
-            }
-        }
-
-        if (head_inst->isLoad() &&
-            !head_inst->isDataPrefetch()) {
-            if (!iewStage->ldstQueue.preCommitLoad(head_inst, tid)){
-                matSquash[tid] = true;
-                return false;
-            } else {
-                matSquash[tid] = false;
-                head_inst->setCompleted();
-            }
-        } else if (head_inst->isStore() &&
-                   !head_inst->isStoreConditional() &&
-                   !head_inst->isDataPrefetch()) {
-            // o3lite: commit store will not cause squash
-            matSquash[tid] = false;
-            if (!iewStage->ldstQueue.preCommitStore(head_inst, tid)){
-                // o3lite: wait for prior unexecuted loads. ???required???
-                return false;
-            } else {
-                toIEW->commitInfo[tid].storeCommitted = true;
-                toIEW->commitInfo[tid].youngest_store = head_inst->seqNum;
-            }
-        } else if (!head_inst->isStoreConditional()) {
-            matSquash[tid] = false;
-            head_inst->setCompleted();
-        }
+    // Stores mark themselves as completed.
+    if (!head_inst->isStore() && inst_fault == NoFault) {
+        head_inst->setCompleted();
     }
 
 #if USE_CHECKER
@@ -1187,7 +1142,7 @@ O3liteCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
 
 template <class Impl>
 void
-O3liteCommit<Impl>::getInsts()
+DefaultCommit<Impl>::getInsts()
 {
     DPRINTF(Commit, "Getting instructions from Rename stage.\n");
 
@@ -1223,7 +1178,7 @@ O3liteCommit<Impl>::getInsts()
 
 template <class Impl>
 void
-O3liteCommit<Impl>::skidInsert()
+DefaultCommit<Impl>::skidInsert()
 {
     DPRINTF(Commit, "Attempting to any instructions from rename into "
             "skidBuffer.\n");
@@ -1246,7 +1201,7 @@ O3liteCommit<Impl>::skidInsert()
 
 template <class Impl>
 void
-O3liteCommit<Impl>::markCompletedInsts()
+DefaultCommit<Impl>::markCompletedInsts()
 {
     // Grab completed insts out of the IEW instruction queue, and mark
     // instructions completed within the ROB.
@@ -1269,7 +1224,7 @@ O3liteCommit<Impl>::markCompletedInsts()
 
 template <class Impl>
 bool
-O3liteCommit<Impl>::robDoneSquashing()
+DefaultCommit<Impl>::robDoneSquashing()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -1286,7 +1241,7 @@ O3liteCommit<Impl>::robDoneSquashing()
 
 template <class Impl>
 void
-O3liteCommit<Impl>::updateComInstStats(DynInstPtr &inst)
+DefaultCommit<Impl>::updateComInstStats(DynInstPtr &inst)
 {
     ThreadID tid = inst->threadNumber;
 
@@ -1332,7 +1287,7 @@ O3liteCommit<Impl>::updateComInstStats(DynInstPtr &inst)
 ////////////////////////////////////////
 template <class Impl>
 ThreadID
-O3liteCommit<Impl>::getCommittingThread()
+DefaultCommit<Impl>::getCommittingThread()
 {
     if (numThreads > 1) {
         switch (commitPolicy) {
@@ -1368,7 +1323,7 @@ O3liteCommit<Impl>::getCommittingThread()
 
 template<class Impl>
 ThreadID
-O3liteCommit<Impl>::roundRobin()
+DefaultCommit<Impl>::roundRobin()
 {
     list<ThreadID>::iterator pri_iter = priority_list.begin();
     list<ThreadID>::iterator end      = priority_list.end();
@@ -1396,7 +1351,7 @@ O3liteCommit<Impl>::roundRobin()
 
 template<class Impl>
 ThreadID
-O3liteCommit<Impl>::oldestReady()
+DefaultCommit<Impl>::oldestReady()
 {
     unsigned oldest = 0;
     bool first = true;
@@ -1432,19 +1387,3 @@ O3liteCommit<Impl>::oldestReady()
         return InvalidThreadID;
     }
 }
-
-// **o3lite
-template <class Impl>
-void
-O3liteCommit<Impl>::squashFromMAT(ThreadID tid)
-{
-  squashAll(tid);
-  DPRINTF(Commit, "Squashing from MAT, restarting at PC %#x\n", PC[tid]);
-
-  thread[tid]->inSyscall = false;
-  commitStatus[tid] = ROBSquashing;
-  cpu->activityThisCycle();
-
-  matSquash[tid] = false;
-}
-

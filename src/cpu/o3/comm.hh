@@ -28,8 +28,8 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3lite_COMM_HH__
-#define __CPU_O3lite_COMM_HH__
+#ifndef __CPU_O3_COMM_HH__
+#define __CPU_O3_COMM_HH__
 
 #include <vector>
 
@@ -37,11 +37,77 @@
 #include "cpu/inst_seq.hh"
 #include "sim/faults.hh"
 
-#include "cpu/o3/comm.hh"
+// Typedef for physical register index type. Although the Impl would be the
+// most likely location for this, there are a few classes that need this
+// typedef yet are not templated on the Impl. For now it will be defined here.
+typedef short int PhysRegIndex;
+
+/** Struct that defines the information passed from fetch to decode. */
+template<class Impl>
+struct DefaultFetchDefaultDecode {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+    Fault fetchFault;
+    InstSeqNum fetchFaultSN;
+    bool clearFetchFault;
+};
+
+/** Struct that defines the information passed from decode to rename. */
+template<class Impl>
+struct DefaultDecodeDefaultRename {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+};
+
+/** Struct that defines the information passed from rename to IEW. */
+template<class Impl>
+struct DefaultRenameDefaultIEW {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+};
+
+/** Struct that defines the information passed from IEW to commit. */
+template<class Impl>
+struct DefaultIEWDefaultCommit {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+
+    bool squash[Impl::MaxThreads];
+    bool branchMispredict[Impl::MaxThreads];
+    bool branchTaken[Impl::MaxThreads];
+    Addr mispredPC[Impl::MaxThreads];
+    Addr nextPC[Impl::MaxThreads];
+    Addr nextNPC[Impl::MaxThreads];
+    Addr nextMicroPC[Impl::MaxThreads];
+    InstSeqNum squashedSeqNum[Impl::MaxThreads];
+
+    bool includeSquashInst[Impl::MaxThreads];
+};
+
+template<class Impl>
+struct IssueStruct {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+};
 
 /** Struct that defines all backwards communication. */
 template<class Impl>
-struct O3liteTimeBufStruct {
+struct TimeBufStruct {
     struct decodeComm {
         bool squash;
         bool predIncorrect;
@@ -120,22 +186,6 @@ struct O3liteTimeBufStruct {
 
         bool interruptPending;
         bool clearInterrupt;
-
-        /* **o3lite
-         *  Indicate there are stores committed, mark them as able
-         *  to writeback at next cycle in IEW no matter whether or
-         *  not the squahsing happens. Mark stores as soon as possible
-         *  can prevent potential deadlock.
-         *
-         *  storeCommitted: indicate committed sotres
-         *  youngest_store: Sequence number for the youngest committed
-         *                  stores. It is not redundant with doneSeqNum
-         *                  since doneSeqNum is set to instruction leading
-         *                  to squash rather than the youngest instruction
-         *                  that have been committed.
-         */
-        bool storeCommitted;
-        InstSeqNum youngest_store;
     };
 
     commitComm commitInfo[Impl::MaxThreads];
@@ -150,4 +200,4 @@ struct O3liteTimeBufStruct {
     bool commitUnblock[Impl::MaxThreads];
 };
 
-#endif //__CPU_O3lite_COMM_HH__
+#endif //__CPU_O3_COMM_HH__

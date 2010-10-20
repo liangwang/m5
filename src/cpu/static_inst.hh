@@ -60,6 +60,12 @@ typedef BaseO3DynInst<O3CPUImpl> O3DynInst;
 template <class Impl> class OzoneDynInst;
 class InOrderDynInst;
 
+// **o3lite
+class O3liteCPUImpl;
+//template <class Impl> class O3liteDynInst;
+//typedef O3liteDynInst<O3liteCPUImpl> O3liteDynInst;
+typedef BaseO3DynInst<O3liteCPUImpl> O3liteDynInst;
+
 class CheckerCPU;
 class FastCPU;
 class AtomicSimpleCPU;

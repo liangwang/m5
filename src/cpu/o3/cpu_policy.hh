@@ -28,15 +28,15 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3lite_CPU_POLICY_HH__
-#define __CPU_O3lite_CPU_POLICY_HH__
+#ifndef __CPU_O3_CPU_POLICY_HH__
+#define __CPU_O3_CPU_POLICY_HH__
 
 #include "cpu/o3/bpred_unit.hh"
 #include "cpu/o3/free_list.hh"
-#include "cpu/o3lite/inst_queue.hh"
-#include "cpu/o3lite/lsq.hh"
-#include "cpu/o3lite/lsq_unit.hh"
-#include "cpu/o3lite/mem_dep_unit.hh"
+#include "cpu/o3/inst_queue.hh"
+#include "cpu/o3/lsq.hh"
+#include "cpu/o3/lsq_unit.hh"
+#include "cpu/o3/mem_dep_unit.hh"
 #include "cpu/o3/regfile.hh"
 #include "cpu/o3/rename_map.hh"
 #include "cpu/o3/rob.hh"
@@ -45,10 +45,10 @@
 #include "cpu/o3/commit.hh"
 #include "cpu/o3/decode.hh"
 #include "cpu/o3/fetch.hh"
-#include "cpu/o3lite/iew.hh"
+#include "cpu/o3/iew.hh"
 #include "cpu/o3/rename.hh"
 
-#include "cpu/o3lite/comm.hh"
+#include "cpu/o3/comm.hh"
 
 /**
  * Struct that defines the key classes to be used by the CPU.  All
@@ -60,7 +60,7 @@
  * the alpha_impl.hh file for instructions.
  */
 template<class Impl>
-struct O3liteCPUPolicy
+struct SimpleCPUPolicy
 {
     /** Typedef for the branch prediction unit (which includes the BP,
      * RAS, and BTB).
@@ -77,13 +77,13 @@ struct O3liteCPUPolicy
     /** Typedef for the ROB. */
     typedef ::ROB<Impl> ROB;
     /** Typedef for the instruction queue/scheduler. */
-    typedef O3liteInstructionQueue<Impl> IQ;
+    typedef InstructionQueue<Impl> IQ;
     /** Typedef for the memory dependence unit. */
-    typedef ::O3liteMemDepUnit<StoreSet, Impl> MemDepUnit;
+    typedef ::MemDepUnit<StoreSet, Impl> MemDepUnit;
     /** Typedef for the LSQ. */
-    typedef ::O3liteLSQ<Impl> LSQ;
+    typedef ::LSQ<Impl> LSQ;
     /** Typedef for the thread-specific LSQ units. */
-    typedef ::O3liteLSQUnit<Impl> LSQUnit;
+    typedef ::LSQUnit<Impl> LSQUnit;
 
     /** Typedef for fetch. */
     typedef DefaultFetch<Impl> Fetch;
@@ -92,9 +92,9 @@ struct O3liteCPUPolicy
     /** Typedef for rename. */
     typedef DefaultRename<Impl> Rename;
     /** Typedef for Issue/Execute/Writeback. */
-    typedef O3liteIEW<Impl> IEW;
+    typedef DefaultIEW<Impl> IEW;
     /** Typedef for commit. */
-    typedef O3liteCommit<Impl> Commit;
+    typedef DefaultCommit<Impl> Commit;
 
     /** The struct for communication between fetch and decode. */
     typedef DefaultFetchDefaultDecode<Impl> FetchStruct;
@@ -112,8 +112,8 @@ struct O3liteCPUPolicy
     typedef ::IssueStruct<Impl> IssueStruct;
 
     /** The struct for all backwards communication. */
-    typedef O3liteTimeBufStruct<Impl> TimeStruct;
+    typedef TimeBufStruct<Impl> TimeStruct;
 
 };
 
-#endif //__CPU_O3lite_CPU_POLICY_HH__
+#endif //__CPU_O3_CPU_POLICY_HH__

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2005 The Regents of The University of Michigan
+ * Copyright (c) 2004-2006 The Regents of The University of Michigan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,9 +26,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Authors: Kevin Lim
+ *          Korey Sewell
  */
 
 #include "cpu/o3/isa_specific.hh"
-#include "cpu/o3lite/commit_impl.hh"
+#include "cpu/o3lite/lsq_unit_impl.hh"
 
-template class O3liteCommit<O3liteCPUImpl>;
+// Force the instantiation of LDSTQ for all the implementations we care about.
+template class O3liteLSQUnit<O3liteCPUImpl>;
+

@@ -141,11 +141,6 @@ class DerivO3CPU(BaseCPU):
     smtROBThreshold = Param.Int(100, "SMT ROB Threshold Sharing Parameter")
     smtCommitPolicy = Param.String('RoundRobin', "SMT Commit Policy")
 
-    MATEntries = Param.Unsigned(32, "Number of memory alias table entries")
-    SBEntries = Param.Unsigned(4, "Number of store buffer entries")
-    numSubscribers = Param.Unsigned(2, "Number of subscribers")
-    smtMATThreshold = Param.Int(100, "SMT MAT Threshold Sharing Parameter")
-
     def addPrivateSplitL1Caches(self, ic, dc):
         BaseCPU.addPrivateSplitL1Caches(self, ic, dc)
         self.icache.tgts_per_mshr = 20
