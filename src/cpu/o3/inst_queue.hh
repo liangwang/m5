@@ -28,8 +28,8 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3lite_INST_QUEUE_HH__
-#define __CPU_O3lite_INST_QUEUE_HH__
+#ifndef __CPU_O3_INST_QUEUE_HH__
+#define __CPU_O3_INST_QUEUE_HH__
 
 #include <list>
 #include <map>
@@ -40,11 +40,11 @@
 #include "base/timebuf.hh"
 #include "base/types.hh"
 #include "cpu/inst_seq.hh"
-#include "cpu/o3lite/dep_graph.hh"
+#include "cpu/o3/dep_graph.hh"
 #include "cpu/op_class.hh"
 #include "sim/eventq.hh"
 
-class DerivO3liteCPUParams;
+class DerivO3CPUParams;
 class FUPool;
 class MemInterface;
 
@@ -66,7 +66,7 @@ class MemInterface;
  * @todo: Make IQ able to handle multiple FU pools.
  */
 template <class Impl>
-class O3liteInstructionQueue
+class InstructionQueue
 {
   public:
     //Typedefs from the Impl.
@@ -93,7 +93,7 @@ class O3liteInstructionQueue
         int fuIdx;
 
         /** Pointer back to the instruction queue. */
-        O3liteInstructionQueue<Impl> *iqPtr;
+        InstructionQueue<Impl> *iqPtr;
 
         /** Should the FU be added to the list to be freed upon
          * completing this event.
@@ -103,7 +103,7 @@ class O3liteInstructionQueue
       public:
         /** Construct a FU completion event. */
         FUCompletion(DynInstPtr &_inst, int fu_idx,
-                     O3liteInstructionQueue<Impl> *iq_ptr);
+                     InstructionQueue<Impl> *iq_ptr);
 
         virtual void process();
         virtual const char *description() const;
@@ -111,10 +111,10 @@ class O3liteInstructionQueue
     };
 
     /** Constructs an IQ. */
-    O3liteInstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3liteCPUParams *params);
+    InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params);
 
     /** Destructs the IQ. */
-    ~O3liteInstructionQueue();
+    ~InstructionQueue();
 
     /** Returns the name of the IQ. */
     std::string name() const;

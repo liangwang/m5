@@ -29,8 +29,8 @@
  *          Korey Sewell
  */
 
-#ifndef __CPU_O3lite_LSQ_UNIT_HH__
-#define __CPU_O3lite_LSQ_UNIT_HH__
+#ifndef __CPU_O3_LSQ_UNIT_HH__
+#define __CPU_O3_LSQ_UNIT_HH__
 
 #include <algorithm>
 #include <cstring>
@@ -47,13 +47,13 @@
 #include "mem/packet.hh"
 #include "mem/port.hh"
 
-class DerivO3liteCPUParams;
+class DerivO3CPUParams;
 
 /**
  * Class that implements the actual LQ and SQ for each specific
  * thread.  Both are circular queues; load entries are freed upon
  * committing, while store entries are freed once they writeback. The
- * O3liteLSQUnit tracks if there are memory ordering violations, and also
+ * LSQUnit tracks if there are memory ordering violations, and also
  * detects partial load to store forwarding cases (a store only has
  * part of a load's data) that requires the load to wait until the
  * store writes back. In the former case it holds onto the instruction
@@ -62,7 +62,7 @@ class DerivO3liteCPUParams;
  * replayed.
  */
 template <class Impl>
-class O3liteLSQUnit {
+class LSQUnit {
   protected:
     typedef TheISA::IntReg IntReg;
   public:
@@ -74,10 +74,10 @@ class O3liteLSQUnit {
 
   public:
     /** Constructs an LSQ unit. init() must be called prior to use. */
-    O3liteLSQUnit();
+    LSQUnit();
 
     /** Initializes the LSQ unit with the specified number of entries. */
-    void init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3liteCPUParams *params,
+    void init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
             LSQ *lsq_ptr, unsigned maxLQEntries, unsigned maxSQEntries,
             unsigned id);
 
@@ -291,7 +291,7 @@ class O3liteLSQUnit {
     class WritebackEvent : public Event {
       public:
         /** Constructs a writeback event. */
-        WritebackEvent(DynInstPtr &_inst, PacketPtr pkt, O3liteLSQUnit *lsq_ptr);
+        WritebackEvent(DynInstPtr &_inst, PacketPtr pkt, LSQUnit *lsq_ptr);
 
         /** Processes the writeback event. */
         void process();
@@ -307,7 +307,7 @@ class O3liteLSQUnit {
         PacketPtr pkt;
 
         /** The pointer to the LSQ unit that issued the store. */
-        O3liteLSQUnit<Impl> *lsqPtr;
+        LSQUnit<Impl> *lsqPtr;
     };
 
   public:
@@ -350,7 +350,7 @@ class O3liteLSQUnit {
     };
 
   private:
-    /** The O3liteLSQUnit thread id. */
+    /** The LSQUnit thread id. */
     ThreadID lsqID;
 
     /** The store queue. */
@@ -516,7 +516,7 @@ class O3liteLSQUnit {
 template <class Impl>
 template <class T>
 Fault
-O3liteLSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
+LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
                     T &data, int load_idx)
 {
     DynInstPtr load_inst = loadQueue[load_idx];
@@ -550,7 +550,7 @@ O3liteLSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
 
     int store_size = 0;
 
-    DPRINTF(O3liteLSQUnit, "Read called, load idx: %i, store idx: %i, "
+    DPRINTF(LSQUnit, "Read called, load idx: %i, store idx: %i, "
             "storeHead: %i addr: %#x%s\n",
             load_idx, store_idx, storeHead, req->getPaddr(),
             sreqLow ? " split" : "");
@@ -613,7 +613,7 @@ O3liteLSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
             memcpy(load_inst->memData,
                     storeQueue[store_idx].data + shift_amt, req->getSize());
 
-            DPRINTF(O3liteLSQUnit, "Forwarding from store idx %i to load to "
+            DPRINTF(LSQUnit, "Forwarding from store idx %i to load to "
                     "addr %#x, data %#x\n",
                     store_idx, req->getVaddr(), data);
 
@@ -669,7 +669,7 @@ O3liteLSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
 
             // Do not generate a writeback event as this instruction is not
             // complete.
-            DPRINTF(O3liteLSQUnit, "Load-store forwarding mis-match. "
+            DPRINTF(LSQUnit, "Load-store forwarding mis-match. "
                     "Store idx %i to load addr %#x\n",
                     store_idx, req->getVaddr());
 
@@ -687,7 +687,7 @@ O3liteLSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
     }
 
     // If there's no forwarding case, then go access memory
-    DPRINTF(O3liteLSQUnit, "Doing memory access for inst [sn:%lli] PC %#x\n",
+    DPRINTF(LSQUnit, "Doing memory access for inst [sn:%lli] PC %#x\n",
             load_inst->seqNum, load_inst->readPC());
 
     assert(!load_inst->memData);
@@ -808,12 +808,12 @@ O3liteLSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
 template <class Impl>
 template <class T>
 Fault
-O3liteLSQUnit<Impl>::write(Request *req, Request *sreqLow, Request *sreqHigh,
+LSQUnit<Impl>::write(Request *req, Request *sreqLow, Request *sreqHigh,
                      T &data, int store_idx)
 {
     assert(storeQueue[store_idx].inst);
 
-    DPRINTF(O3liteLSQUnit, "Doing write to store idx %i, addr %#x data %#x"
+    DPRINTF(LSQUnit, "Doing write to store idx %i, addr %#x data %#x"
             " | storeHead:%i [sn:%i]\n",
             store_idx, req->getPaddr(), data, storeHead,
             storeQueue[store_idx].inst->seqNum);

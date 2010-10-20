@@ -30,29 +30,29 @@
 
 #include <map>
 
-#include "cpu/o3lite/inst_queue.hh"
-#include "cpu/o3lite/mem_dep_unit.hh"
+#include "cpu/o3/inst_queue.hh"
+#include "cpu/o3/mem_dep_unit.hh"
 
-#include "params/DerivO3liteCPU.hh"
+#include "params/DerivO3CPU.hh"
 
 template <class MemDepPred, class Impl>
-O3liteMemDepUnit<MemDepPred, Impl>::O3liteMemDepUnit()
+MemDepUnit<MemDepPred, Impl>::MemDepUnit()
     : loadBarrier(false), loadBarrierSN(0), storeBarrier(false),
       storeBarrierSN(0), iqPtr(NULL)
 {
 }
 
 template <class MemDepPred, class Impl>
-O3liteMemDepUnit<MemDepPred, Impl>::O3liteMemDepUnit(DerivO3liteCPUParams *params)
+MemDepUnit<MemDepPred, Impl>::MemDepUnit(DerivO3CPUParams *params)
     : _name(params->name + ".memdepunit"),
       depPred(params->SSITSize, params->LFSTSize), loadBarrier(false),
       loadBarrierSN(0), storeBarrier(false), storeBarrierSN(0), iqPtr(NULL)
 {
-    DPRINTF(O3liteMemDepUnit, "Creating O3liteMemDepUnit object.\n");
+    DPRINTF(MemDepUnit, "Creating MemDepUnit object.\n");
 }
 
 template <class MemDepPred, class Impl>
-O3liteMemDepUnit<MemDepPred, Impl>::~O3liteMemDepUnit()
+MemDepUnit<MemDepPred, Impl>::~MemDepUnit()
 {
     for (ThreadID tid = 0; tid < Impl::MaxThreads; tid++) {
 
@@ -78,9 +78,9 @@ O3liteMemDepUnit<MemDepPred, Impl>::~O3liteMemDepUnit()
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::init(DerivO3liteCPUParams *params, ThreadID tid)
+MemDepUnit<MemDepPred, Impl>::init(DerivO3CPUParams *params, ThreadID tid)
 {
-    DPRINTF(O3liteMemDepUnit, "Creating O3liteMemDepUnit %i object.\n",tid);
+    DPRINTF(MemDepUnit, "Creating MemDepUnit %i object.\n",tid);
 
     _name = csprintf("%s.memDep%d", params->name, tid);
     id = tid;
@@ -90,7 +90,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::init(DerivO3liteCPUParams *params, ThreadID 
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::regStats()
+MemDepUnit<MemDepPred, Impl>::regStats()
 {
     insertedLoads
         .name(name() + ".insertedLoads")
@@ -111,7 +111,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::regStats()
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::switchOut()
+MemDepUnit<MemDepPred, Impl>::switchOut()
 {
     assert(instList[0].empty());
     assert(instsToReplay.empty());
@@ -126,7 +126,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::switchOut()
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::takeOverFrom()
+MemDepUnit<MemDepPred, Impl>::takeOverFrom()
 {
     // Be sure to reset all state.
     loadBarrier = storeBarrier = false;
@@ -136,14 +136,14 @@ O3liteMemDepUnit<MemDepPred, Impl>::takeOverFrom()
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::setIQ(InstructionQueue<Impl> *iq_ptr)
+MemDepUnit<MemDepPred, Impl>::setIQ(InstructionQueue<Impl> *iq_ptr)
 {
     iqPtr = iq_ptr;
 }
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::insert(DynInstPtr &inst)
+MemDepUnit<MemDepPred, Impl>::insert(DynInstPtr &inst)
 {
     ThreadID tid = inst->threadNumber;
 
@@ -164,11 +164,11 @@ O3liteMemDepUnit<MemDepPred, Impl>::insert(DynInstPtr &inst)
     // producing memrefs/stores.
     InstSeqNum producing_store;
     if (inst->isLoad() && loadBarrier) {
-        DPRINTF(O3liteMemDepUnit, "Load barrier [sn:%lli] in flight\n",
+        DPRINTF(MemDepUnit, "Load barrier [sn:%lli] in flight\n",
                 loadBarrierSN);
         producing_store = loadBarrierSN;
     } else if (inst->isStore() && storeBarrier) {
-        DPRINTF(O3liteMemDepUnit, "Store barrier [sn:%lli] in flight\n",
+        DPRINTF(MemDepUnit, "Store barrier [sn:%lli] in flight\n",
                 storeBarrierSN);
         producing_store = storeBarrierSN;
     } else {
@@ -179,19 +179,19 @@ O3liteMemDepUnit<MemDepPred, Impl>::insert(DynInstPtr &inst)
 
     // If there is a producing store, try to find the entry.
     if (producing_store != 0) {
-        DPRINTF(O3liteMemDepUnit, "Searching for producer\n");
+        DPRINTF(MemDepUnit, "Searching for producer\n");
         MemDepHashIt hash_it = memDepHash.find(producing_store);
 
         if (hash_it != memDepHash.end()) {
             store_entry = (*hash_it).second;
-            DPRINTF(O3liteMemDepUnit, "Proucer found\n");
+            DPRINTF(MemDepUnit, "Proucer found\n");
         }
     }
 
     // If no store entry, then instruction can issue as soon as the registers
     // are ready.
     if (!store_entry) {
-        DPRINTF(O3liteMemDepUnit, "No dependency for inst PC "
+        DPRINTF(MemDepUnit, "No dependency for inst PC "
                 "%#x [sn:%lli].\n", inst->readPC(), inst->seqNum);
 
         inst_entry->memDepReady = true;
@@ -203,7 +203,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::insert(DynInstPtr &inst)
         }
     } else {
         // Otherwise make the instruction dependent on the store/barrier.
-        DPRINTF(O3liteMemDepUnit, "Adding to dependency list; "
+        DPRINTF(MemDepUnit, "Adding to dependency list; "
                 "inst PC %#x is dependent on [sn:%lli].\n",
                 inst->readPC(), producing_store);
 
@@ -225,7 +225,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::insert(DynInstPtr &inst)
     }
 
     if (inst->isStore()) {
-        DPRINTF(O3liteMemDepUnit, "Inserting store PC %#x [sn:%lli].\n",
+        DPRINTF(MemDepUnit, "Inserting store PC %#x [sn:%lli].\n",
                 inst->readPC(), inst->seqNum);
 
         depPred.insertStore(inst->readPC(), inst->seqNum, inst->threadNumber);
@@ -240,7 +240,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::insert(DynInstPtr &inst)
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::insertNonSpec(DynInstPtr &inst)
+MemDepUnit<MemDepPred, Impl>::insertNonSpec(DynInstPtr &inst)
 {
     ThreadID tid = inst->threadNumber;
 
@@ -261,7 +261,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::insertNonSpec(DynInstPtr &inst)
     // Might want to turn this part into an inline function or something.
     // It's shared between both insert functions.
     if (inst->isStore()) {
-        DPRINTF(O3liteMemDepUnit, "Inserting store PC %#x [sn:%lli].\n",
+        DPRINTF(MemDepUnit, "Inserting store PC %#x [sn:%lli].\n",
                 inst->readPC(), inst->seqNum);
 
         depPred.insertStore(inst->readPC(), inst->seqNum, inst->threadNumber);
@@ -276,7 +276,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::insertNonSpec(DynInstPtr &inst)
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::insertBarrier(DynInstPtr &barr_inst)
+MemDepUnit<MemDepPred, Impl>::insertBarrier(DynInstPtr &barr_inst)
 {
     InstSeqNum barr_sn = barr_inst->seqNum;
     // Memory barriers block loads and stores, write barriers only stores.
@@ -285,11 +285,11 @@ O3liteMemDepUnit<MemDepPred, Impl>::insertBarrier(DynInstPtr &barr_inst)
         loadBarrierSN = barr_sn;
         storeBarrier = true;
         storeBarrierSN = barr_sn;
-        DPRINTF(O3liteMemDepUnit, "Inserted a memory barrier\n");
+        DPRINTF(MemDepUnit, "Inserted a memory barrier\n");
     } else if (barr_inst->isWriteBarrier()) {
         storeBarrier = true;
         storeBarrierSN = barr_sn;
-        DPRINTF(O3liteMemDepUnit, "Inserted a write barrier\n");
+        DPRINTF(MemDepUnit, "Inserted a write barrier\n");
     }
 
     ThreadID tid = barr_inst->threadNumber;
@@ -311,9 +311,9 @@ O3liteMemDepUnit<MemDepPred, Impl>::insertBarrier(DynInstPtr &barr_inst)
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::regsReady(DynInstPtr &inst)
+MemDepUnit<MemDepPred, Impl>::regsReady(DynInstPtr &inst)
 {
-    DPRINTF(O3liteMemDepUnit, "Marking registers as ready for "
+    DPRINTF(MemDepUnit, "Marking registers as ready for "
             "instruction PC %#x [sn:%lli].\n",
             inst->readPC(), inst->seqNum);
 
@@ -322,21 +322,21 @@ O3liteMemDepUnit<MemDepPred, Impl>::regsReady(DynInstPtr &inst)
     inst_entry->regsReady = true;
 
     if (inst_entry->memDepReady) {
-        DPRINTF(O3liteMemDepUnit, "Instruction has its memory "
+        DPRINTF(MemDepUnit, "Instruction has its memory "
                 "dependencies resolved, adding it to the ready list.\n");
 
         moveToReady(inst_entry);
     } else {
-        DPRINTF(O3liteMemDepUnit, "Instruction still waiting on "
+        DPRINTF(MemDepUnit, "Instruction still waiting on "
                 "memory dependency.\n");
     }
 }
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::nonSpecInstReady(DynInstPtr &inst)
+MemDepUnit<MemDepPred, Impl>::nonSpecInstReady(DynInstPtr &inst)
 {
-    DPRINTF(O3liteMemDepUnit, "Marking non speculative "
+    DPRINTF(MemDepUnit, "Marking non speculative "
             "instruction PC %#x as ready [sn:%lli].\n",
             inst->readPC(), inst->seqNum);
 
@@ -347,14 +347,14 @@ O3liteMemDepUnit<MemDepPred, Impl>::nonSpecInstReady(DynInstPtr &inst)
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::reschedule(DynInstPtr &inst)
+MemDepUnit<MemDepPred, Impl>::reschedule(DynInstPtr &inst)
 {
     instsToReplay.push_back(inst);
 }
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::replay(DynInstPtr &inst)
+MemDepUnit<MemDepPred, Impl>::replay(DynInstPtr &inst)
 {
     DynInstPtr temp_inst;
 
@@ -364,7 +364,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::replay(DynInstPtr &inst)
 
         MemDepEntryPtr inst_entry = findInHash(temp_inst);
 
-        DPRINTF(O3liteMemDepUnit, "Replaying mem instruction PC %#x "
+        DPRINTF(MemDepUnit, "Replaying mem instruction PC %#x "
                 "[sn:%lli].\n",
                 temp_inst->readPC(), temp_inst->seqNum);
 
@@ -376,9 +376,9 @@ O3liteMemDepUnit<MemDepPred, Impl>::replay(DynInstPtr &inst)
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::completed(DynInstPtr &inst)
+MemDepUnit<MemDepPred, Impl>::completed(DynInstPtr &inst)
 {
-    DPRINTF(O3liteMemDepUnit, "Completed mem instruction PC %#x "
+    DPRINTF(MemDepUnit, "Completed mem instruction PC %#x "
             "[sn:%lli].\n",
             inst->readPC(), inst->seqNum);
 
@@ -401,7 +401,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::completed(DynInstPtr &inst)
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::completeBarrier(DynInstPtr &inst)
+MemDepUnit<MemDepPred, Impl>::completeBarrier(DynInstPtr &inst)
 {
     wakeDependents(inst);
     completed(inst);
@@ -423,7 +423,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::completeBarrier(DynInstPtr &inst)
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::wakeDependents(DynInstPtr &inst)
+MemDepUnit<MemDepPred, Impl>::wakeDependents(DynInstPtr &inst)
 {
     // Only stores and barriers have dependents.
     if (!inst->isStore() && !inst->isMemBarrier() && !inst->isWriteBarrier()) {
@@ -440,7 +440,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::wakeDependents(DynInstPtr &inst)
             continue;
         }
 
-        DPRINTF(O3liteMemDepUnit, "Waking up a dependent inst, "
+        DPRINTF(MemDepUnit, "Waking up a dependent inst, "
                 "[sn:%lli].\n",
                 woken_inst->inst->seqNum);
 
@@ -456,7 +456,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::wakeDependents(DynInstPtr &inst)
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::squash(const InstSeqNum &squashed_num,
+MemDepUnit<MemDepPred, Impl>::squash(const InstSeqNum &squashed_num,
                                      ThreadID tid)
 {
     if (!instsToReplay.empty()) {
@@ -479,7 +479,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::squash(const InstSeqNum &squashed_num,
     while (!instList[tid].empty() &&
            (*squash_it)->seqNum > squashed_num) {
 
-        DPRINTF(O3liteMemDepUnit, "Squashing inst [sn:%lli]\n",
+        DPRINTF(MemDepUnit, "Squashing inst [sn:%lli]\n",
                 (*squash_it)->seqNum);
 
         hash_it = memDepHash.find((*squash_it)->seqNum);
@@ -504,10 +504,10 @@ O3liteMemDepUnit<MemDepPred, Impl>::squash(const InstSeqNum &squashed_num,
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::violation(DynInstPtr &store_inst,
+MemDepUnit<MemDepPred, Impl>::violation(DynInstPtr &store_inst,
                                         DynInstPtr &violating_load)
 {
-    DPRINTF(O3liteMemDepUnit, "Passing violating PCs to store sets,"
+    DPRINTF(MemDepUnit, "Passing violating PCs to store sets,"
             " load: %#x, store: %#x\n", violating_load->readPC(),
             store_inst->readPC());
     // Tell the memory dependence unit of the violation.
@@ -516,17 +516,17 @@ O3liteMemDepUnit<MemDepPred, Impl>::violation(DynInstPtr &store_inst,
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::issue(DynInstPtr &inst)
+MemDepUnit<MemDepPred, Impl>::issue(DynInstPtr &inst)
 {
-    DPRINTF(O3liteMemDepUnit, "Issuing instruction PC %#x [sn:%lli].\n",
+    DPRINTF(MemDepUnit, "Issuing instruction PC %#x [sn:%lli].\n",
             inst->readPC(), inst->seqNum);
 
     depPred.issued(inst->readPC(), inst->seqNum, inst->isStore());
 }
 
 template <class MemDepPred, class Impl>
-inline typename O3liteMemDepUnit<MemDepPred,Impl>::MemDepEntryPtr &
-O3liteMemDepUnit<MemDepPred, Impl>::findInHash(const DynInstPtr &inst)
+inline typename MemDepUnit<MemDepPred,Impl>::MemDepEntryPtr &
+MemDepUnit<MemDepPred, Impl>::findInHash(const DynInstPtr &inst)
 {
     MemDepHashIt hash_it = memDepHash.find(inst->seqNum);
 
@@ -537,9 +537,9 @@ O3liteMemDepUnit<MemDepPred, Impl>::findInHash(const DynInstPtr &inst)
 
 template <class MemDepPred, class Impl>
 inline void
-O3liteMemDepUnit<MemDepPred, Impl>::moveToReady(MemDepEntryPtr &woken_inst_entry)
+MemDepUnit<MemDepPred, Impl>::moveToReady(MemDepEntryPtr &woken_inst_entry)
 {
-    DPRINTF(O3liteMemDepUnit, "Adding instruction [sn:%lli] "
+    DPRINTF(MemDepUnit, "Adding instruction [sn:%lli] "
             "to the ready list.\n", woken_inst_entry->inst->seqNum);
 
     assert(!woken_inst_entry->squashed);
@@ -550,7 +550,7 @@ O3liteMemDepUnit<MemDepPred, Impl>::moveToReady(MemDepEntryPtr &woken_inst_entry
 
 template <class MemDepPred, class Impl>
 void
-O3liteMemDepUnit<MemDepPred, Impl>::dumpLists()
+MemDepUnit<MemDepPred, Impl>::dumpLists()
 {
     for (ThreadID tid = 0; tid < Impl::MaxThreads; tid++) {
         cprintf("Instruction list %i size: %i\n",

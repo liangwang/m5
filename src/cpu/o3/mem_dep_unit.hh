@@ -28,8 +28,8 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3lite_MEM_DEP_UNIT_HH__
-#define __CPU_O3lite_MEM_DEP_UNIT_HH__
+#ifndef __CPU_O3_MEM_DEP_UNIT_HH__
+#define __CPU_O3_MEM_DEP_UNIT_HH__
 
 #include <list>
 #include <set>
@@ -48,10 +48,10 @@ struct SNHash {
     }
 };
 
-class DerivO3liteCPUParams;
+class DerivO3CPUParams;
 
 template <class Impl>
-class O3liteInstructionQueue;
+class InstructionQueue;
 
 /**
  * Memory dependency unit class.  This holds the memory dependence predictor.
@@ -65,7 +65,7 @@ class O3liteInstructionQueue;
  * dependence prediction schemes.
  */
 template <class MemDepPred, class Impl>
-class O3liteMemDepUnit
+class MemDepUnit
 {
   protected:
     std::string _name;
@@ -74,19 +74,19 @@ class O3liteMemDepUnit
     typedef typename Impl::DynInstPtr DynInstPtr;
 
     /** Empty constructor. Must call init() prior to using in this case. */
-    O3liteMemDepUnit();
+    MemDepUnit();
 
-    /** Constructs a O3liteMemDepUnit with given parameters. */
-    O3liteMemDepUnit(DerivO3liteCPUParams *params);
+    /** Constructs a MemDepUnit with given parameters. */
+    MemDepUnit(DerivO3CPUParams *params);
 
     /** Frees up any memory allocated. */
-    ~O3liteMemDepUnit();
+    ~MemDepUnit();
 
     /** Returns the name of the memory dependence unit. */
     std::string name() const { return _name; }
 
     /** Initializes the unit with parameters and a thread id. */
-    void init(DerivO3liteCPUParams *params, ThreadID tid);
+    void init(DerivO3CPUParams *params, ThreadID tid);
 
     /** Registers statistics. */
     void regStats();
@@ -167,7 +167,7 @@ class O3liteMemDepUnit
 #ifdef DEBUG
             ++memdep_count;
 
-            DPRINTF(O3liteMemDepUnit, "Memory dependency entry created.  "
+            DPRINTF(MemDepUnit, "Memory dependency entry created.  "
                     "memdep_count=%i\n", memdep_count);
 #endif
         }
@@ -181,7 +181,7 @@ class O3liteMemDepUnit
 #ifdef DEBUG
             --memdep_count;
 
-            DPRINTF(O3liteMemDepUnit, "Memory dependency entry deleted.  "
+            DPRINTF(MemDepUnit, "Memory dependency entry deleted.  "
                     "memdep_count=%i\n", memdep_count);
 #endif
         }

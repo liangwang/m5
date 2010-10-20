@@ -32,8 +32,8 @@
 #include "arch/locked_mem.hh"
 #include "config/the_isa.hh"
 #include "config/use_checker.hh"
-#include "cpu/o3lite/lsq.hh"
-#include "cpu/o3lite/lsq_unit.hh"
+#include "cpu/o3/lsq.hh"
+#include "cpu/o3/lsq_unit.hh"
 #include "base/str.hh"
 #include "mem/packet.hh"
 #include "mem/request.hh"
@@ -43,8 +43,8 @@
 #endif
 
 template<class Impl>
-O3liteLSQUnit<Impl>::WritebackEvent::WritebackEvent(DynInstPtr &_inst, PacketPtr _pkt,
-                                              O3liteLSQUnit *lsq_ptr)
+LSQUnit<Impl>::WritebackEvent::WritebackEvent(DynInstPtr &_inst, PacketPtr _pkt,
+                                              LSQUnit *lsq_ptr)
     : inst(_inst), pkt(_pkt), lsqPtr(lsq_ptr)
 {
     this->setFlags(Event::AutoDelete);
@@ -52,7 +52,7 @@ O3liteLSQUnit<Impl>::WritebackEvent::WritebackEvent(DynInstPtr &_inst, PacketPtr
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::WritebackEvent::process()
+LSQUnit<Impl>::WritebackEvent::process()
 {
     if (!lsqPtr->isSwitchedOut()) {
         lsqPtr->writeback(inst, pkt);
@@ -67,14 +67,14 @@ O3liteLSQUnit<Impl>::WritebackEvent::process()
 
 template<class Impl>
 const char *
-O3liteLSQUnit<Impl>::WritebackEvent::description() const
+LSQUnit<Impl>::WritebackEvent::description() const
 {
     return "Store writeback";
 }
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::completeDataAccess(PacketPtr pkt)
+LSQUnit<Impl>::completeDataAccess(PacketPtr pkt)
 {
     LSQSenderState *state = dynamic_cast<LSQSenderState *>(pkt->senderState);
     DynInstPtr inst = state->inst;
@@ -119,7 +119,7 @@ O3liteLSQUnit<Impl>::completeDataAccess(PacketPtr pkt)
 }
 
 template <class Impl>
-O3liteLSQUnit<Impl>::O3liteLSQUnit()
+LSQUnit<Impl>::LSQUnit()
     : loads(0), stores(0), storesToWB(0), stalled(false),
       isStoreBlocked(false), isLoadBlocked(false),
       loadBlockedHandled(false), hasPendingPkt(false)
@@ -128,14 +128,14 @@ O3liteLSQUnit<Impl>::O3liteLSQUnit()
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3liteCPUParams *params,
+LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
         LSQ *lsq_ptr, unsigned maxLQEntries, unsigned maxSQEntries,
         unsigned id)
 {
     cpu = cpu_ptr;
     iewStage = iew_ptr;
 
-    DPRINTF(O3liteLSQUnit, "Creating O3liteLSQUnit%i object.\n",id);
+    DPRINTF(LSQUnit, "Creating LSQUnit%i object.\n",id);
 
     switchedOut = false;
 
@@ -165,7 +165,7 @@ O3liteLSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3liteCPUParams *pa
 
 template<class Impl>
 std::string
-O3liteLSQUnit<Impl>::name() const
+LSQUnit<Impl>::name() const
 {
     if (Impl::MaxThreads == 1) {
         return iewStage->name() + ".lsq";
@@ -176,7 +176,7 @@ O3liteLSQUnit<Impl>::name() const
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::regStats()
+LSQUnit<Impl>::regStats()
 {
     lsqForwLoads
         .name(name() + ".forwLoads")
@@ -221,7 +221,7 @@ O3liteLSQUnit<Impl>::regStats()
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::setDcachePort(Port *dcache_port)
+LSQUnit<Impl>::setDcachePort(Port *dcache_port)
 {
     dcachePort = dcache_port;
 
@@ -234,21 +234,21 @@ O3liteLSQUnit<Impl>::setDcachePort(Port *dcache_port)
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::clearLQ()
+LSQUnit<Impl>::clearLQ()
 {
     loadQueue.clear();
 }
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::clearSQ()
+LSQUnit<Impl>::clearSQ()
 {
     storeQueue.clear();
 }
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::switchOut()
+LSQUnit<Impl>::switchOut()
 {
     switchedOut = true;
     for (int i = 0; i < loadQueue.size(); ++i) {
@@ -261,7 +261,7 @@ O3liteLSQUnit<Impl>::switchOut()
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::takeOverFrom()
+LSQUnit<Impl>::takeOverFrom()
 {
     switchedOut = false;
     loads = stores = storesToWB = 0;
@@ -283,7 +283,7 @@ O3liteLSQUnit<Impl>::takeOverFrom()
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::resizeLQ(unsigned size)
+LSQUnit<Impl>::resizeLQ(unsigned size)
 {
     unsigned size_plus_sentinel = size + 1;
     assert(size_plus_sentinel >= LQEntries);
@@ -302,7 +302,7 @@ O3liteLSQUnit<Impl>::resizeLQ(unsigned size)
 
 template<class Impl>
 void
-O3liteLSQUnit<Impl>::resizeSQ(unsigned size)
+LSQUnit<Impl>::resizeSQ(unsigned size)
 {
     unsigned size_plus_sentinel = size + 1;
     if (size_plus_sentinel > SQEntries) {
@@ -318,7 +318,7 @@ O3liteLSQUnit<Impl>::resizeSQ(unsigned size)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::insert(DynInstPtr &inst)
+LSQUnit<Impl>::insert(DynInstPtr &inst)
 {
     assert(inst->isMemRef());
 
@@ -335,12 +335,12 @@ O3liteLSQUnit<Impl>::insert(DynInstPtr &inst)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::insertLoad(DynInstPtr &load_inst)
+LSQUnit<Impl>::insertLoad(DynInstPtr &load_inst)
 {
     assert((loadTail + 1) % LQEntries != loadHead);
     assert(loads < LQEntries);
 
-    DPRINTF(O3liteLSQUnit, "Inserting load PC %#x, idx:%i [sn:%lli]\n",
+    DPRINTF(LSQUnit, "Inserting load PC %#x, idx:%i [sn:%lli]\n",
             load_inst->readPC(), loadTail, load_inst->seqNum);
 
     load_inst->lqIdx = loadTail;
@@ -360,13 +360,13 @@ O3liteLSQUnit<Impl>::insertLoad(DynInstPtr &load_inst)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::insertStore(DynInstPtr &store_inst)
+LSQUnit<Impl>::insertStore(DynInstPtr &store_inst)
 {
     // Make sure it is not full before inserting an instruction.
     assert((storeTail + 1) % SQEntries != storeHead);
     assert(stores < SQEntries);
 
-    DPRINTF(O3liteLSQUnit, "Inserting store PC %#x, idx:%i [sn:%lli]\n",
+    DPRINTF(LSQUnit, "Inserting store PC %#x, idx:%i [sn:%lli]\n",
             store_inst->readPC(), storeTail, store_inst->seqNum);
 
     store_inst->sqIdx = storeTail;
@@ -381,7 +381,7 @@ O3liteLSQUnit<Impl>::insertStore(DynInstPtr &store_inst)
 
 template <class Impl>
 typename Impl::DynInstPtr
-O3liteLSQUnit<Impl>::getMemDepViolator()
+LSQUnit<Impl>::getMemDepViolator()
 {
     DynInstPtr temp = memDepViolator;
 
@@ -392,7 +392,7 @@ O3liteLSQUnit<Impl>::getMemDepViolator()
 
 template <class Impl>
 unsigned
-O3liteLSQUnit<Impl>::numFreeEntries()
+LSQUnit<Impl>::numFreeEntries()
 {
     unsigned free_lq_entries = LQEntries - loads;
     unsigned free_sq_entries = SQEntries - stores;
@@ -408,7 +408,7 @@ O3liteLSQUnit<Impl>::numFreeEntries()
 
 template <class Impl>
 int
-O3liteLSQUnit<Impl>::numLoadsReady()
+LSQUnit<Impl>::numLoadsReady()
 {
     int load_idx = loadHead;
     int retval = 0;
@@ -426,13 +426,13 @@ O3liteLSQUnit<Impl>::numLoadsReady()
 
 template <class Impl>
 Fault
-O3liteLSQUnit<Impl>::executeLoad(DynInstPtr &inst)
+LSQUnit<Impl>::executeLoad(DynInstPtr &inst)
 {
     using namespace TheISA;
     // Execute a specific load.
     Fault load_fault = NoFault;
 
-    DPRINTF(O3liteLSQUnit, "Executing load PC %#x, [sn:%lli]\n",
+    DPRINTF(LSQUnit, "Executing load PC %#x, [sn:%lli]\n",
             inst->readPC(),inst->seqNum);
 
     assert(!inst->isSquashed());
@@ -491,7 +491,7 @@ O3liteLSQUnit<Impl>::executeLoad(DynInstPtr &inst)
 
 template <class Impl>
 Fault
-O3liteLSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
+LSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
 {
     using namespace TheISA;
     // Make sure that a store exists.
@@ -499,7 +499,7 @@ O3liteLSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
 
     int store_idx = store_inst->sqIdx;
 
-    DPRINTF(O3liteLSQUnit, "Executing store PC %#x [sn:%lli]\n",
+    DPRINTF(LSQUnit, "Executing store PC %#x [sn:%lli]\n",
             store_inst->readPC(), store_inst->seqNum);
 
     assert(!store_inst->isSquashed());
@@ -511,7 +511,7 @@ O3liteLSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
     Fault store_fault = store_inst->initiateAcc();
 
     if (storeQueue[store_idx].size == 0) {
-        DPRINTF(O3liteLSQUnit,"Fault on Store PC %#x, [sn:%lli],Size = 0\n",
+        DPRINTF(LSQUnit,"Fault on Store PC %#x, [sn:%lli],Size = 0\n",
                 store_inst->readPC(),store_inst->seqNum);
 
         return store_fault;
@@ -564,11 +564,11 @@ O3liteLSQUnit<Impl>::executeStore(DynInstPtr &store_inst)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::commitLoad()
+LSQUnit<Impl>::commitLoad()
 {
     assert(loadQueue[loadHead]);
 
-    DPRINTF(O3liteLSQUnit, "Committing head load instruction, PC %#x\n",
+    DPRINTF(LSQUnit, "Committing head load instruction, PC %#x\n",
             loadQueue[loadHead]->readPC());
 
     loadQueue[loadHead] = NULL;
@@ -580,7 +580,7 @@ O3liteLSQUnit<Impl>::commitLoad()
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::commitLoads(InstSeqNum &youngest_inst)
+LSQUnit<Impl>::commitLoads(InstSeqNum &youngest_inst)
 {
     assert(loads == 0 || loadQueue[loadHead]);
 
@@ -591,7 +591,7 @@ O3liteLSQUnit<Impl>::commitLoads(InstSeqNum &youngest_inst)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::commitStores(InstSeqNum &youngest_inst)
+LSQUnit<Impl>::commitStores(InstSeqNum &youngest_inst)
 {
     assert(stores == 0 || storeQueue[storeHead].inst);
 
@@ -605,7 +605,7 @@ O3liteLSQUnit<Impl>::commitStores(InstSeqNum &youngest_inst)
             if (storeQueue[store_idx].inst->seqNum > youngest_inst) {
                 break;
             }
-            DPRINTF(O3liteLSQUnit, "Marking store as able to write back, PC "
+            DPRINTF(LSQUnit, "Marking store as able to write back, PC "
                     "%#x [sn:%lli]\n",
                     storeQueue[store_idx].inst->readPC(),
                     storeQueue[store_idx].inst->seqNum);
@@ -621,7 +621,7 @@ O3liteLSQUnit<Impl>::commitStores(InstSeqNum &youngest_inst)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::writebackPendingStore()
+LSQUnit<Impl>::writebackPendingStore()
 {
     if (hasPendingPkt) {
         assert(pendingPkt != NULL);
@@ -637,7 +637,7 @@ O3liteLSQUnit<Impl>::writebackPendingStore()
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::writebackStores()
+LSQUnit<Impl>::writebackStores()
 {
     // First writeback the second packet from any split store that didn't
     // complete last cycle because there weren't enough cache ports available.
@@ -652,7 +652,7 @@ O3liteLSQUnit<Impl>::writebackStores()
            usedPorts < cachePorts) {
 
         if (isStoreBlocked || lsq->cacheBlocked()) {
-            DPRINTF(O3liteLSQUnit, "Unable to write back any more stores, cache"
+            DPRINTF(LSQUnit, "Unable to write back any more stores, cache"
                     " is blocked!\n");
             break;
         }
@@ -732,7 +732,7 @@ O3liteLSQUnit<Impl>::writebackStores()
             req = sreqLow;
         }
 
-        DPRINTF(O3liteLSQUnit, "D-Cache: Writing back store idx:%i PC:%#x "
+        DPRINTF(LSQUnit, "D-Cache: Writing back store idx:%i PC:%#x "
                 "to Addr:%#x, data:%#x [sn:%lli]\n",
                 storeWBIdx, inst->readPC(),
                 req->getPaddr(), (int)*(inst->memData),
@@ -750,7 +750,7 @@ O3liteLSQUnit<Impl>::writebackStores()
 
             if (!success) {
                 // Instantly complete this store.
-                DPRINTF(O3liteLSQUnit, "Store conditional [sn:%lli] failed.  "
+                DPRINTF(LSQUnit, "Store conditional [sn:%lli] failed.  "
                         "Instantly completing it.\n",
                         inst->seqNum);
                 WritebackEvent *wb = new WritebackEvent(inst, data_pkt, this);
@@ -813,7 +813,7 @@ O3liteLSQUnit<Impl>::writebackStores()
 
 /*template <class Impl>
 void
-O3liteLSQUnit<Impl>::removeMSHR(InstSeqNum seqNum)
+LSQUnit<Impl>::removeMSHR(InstSeqNum seqNum)
 {
     list<InstSeqNum>::iterator mshr_it = find(mshrSeqNums.begin(),
                                               mshrSeqNums.end(),
@@ -821,22 +821,22 @@ O3liteLSQUnit<Impl>::removeMSHR(InstSeqNum seqNum)
 
     if (mshr_it != mshrSeqNums.end()) {
         mshrSeqNums.erase(mshr_it);
-        DPRINTF(O3liteLSQUnit, "Removing MSHR. count = %i\n",mshrSeqNums.size());
+        DPRINTF(LSQUnit, "Removing MSHR. count = %i\n",mshrSeqNums.size());
     }
 }*/
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
+LSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
 {
-    DPRINTF(O3liteLSQUnit, "Squashing until [sn:%lli]!"
+    DPRINTF(LSQUnit, "Squashing until [sn:%lli]!"
             "(Loads:%i Stores:%i)\n", squashed_num, loads, stores);
 
     int load_idx = loadTail;
     decrLdIdx(load_idx);
 
     while (loads != 0 && loadQueue[load_idx]->seqNum > squashed_num) {
-        DPRINTF(O3liteLSQUnit,"Load Instruction PC %#x squashed, "
+        DPRINTF(LSQUnit,"Load Instruction PC %#x squashed, "
                 "[sn:%lli]\n",
                 loadQueue[load_idx]->readPC(),
                 loadQueue[load_idx]->seqNum);
@@ -881,7 +881,7 @@ O3liteLSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
             break;
         }
 
-        DPRINTF(O3liteLSQUnit,"Store Instruction PC %#x squashed, "
+        DPRINTF(LSQUnit,"Store Instruction PC %#x squashed, "
                 "idx:%i [sn:%lli]\n",
                 storeQueue[store_idx].inst->readPC(),
                 store_idx, storeQueue[store_idx].inst->seqNum);
@@ -925,11 +925,11 @@ O3liteLSQUnit<Impl>::squash(const InstSeqNum &squashed_num)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::storePostSend(PacketPtr pkt)
+LSQUnit<Impl>::storePostSend(PacketPtr pkt)
 {
     if (isStalled() &&
         storeQueue[storeWBIdx].inst->seqNum == stallingStoreIsn) {
-        DPRINTF(O3liteLSQUnit, "Unstalling, stalling store [sn:%lli] "
+        DPRINTF(LSQUnit, "Unstalling, stalling store [sn:%lli] "
                 "load idx:%i\n",
                 stallingStoreIsn, stallingLoadIdx);
         stalled = false;
@@ -954,7 +954,7 @@ O3liteLSQUnit<Impl>::storePostSend(PacketPtr pkt)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::writeback(DynInstPtr &inst, PacketPtr pkt)
+LSQUnit<Impl>::writeback(DynInstPtr &inst, PacketPtr pkt)
 {
     iewStage->wakeCPU();
 
@@ -981,7 +981,7 @@ O3liteLSQUnit<Impl>::writeback(DynInstPtr &inst, PacketPtr pkt)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::completeStore(int store_idx)
+LSQUnit<Impl>::completeStore(int store_idx)
 {
     assert(storeQueue[store_idx].inst);
     storeQueue[store_idx].completed = true;
@@ -1003,13 +1003,13 @@ O3liteLSQUnit<Impl>::completeStore(int store_idx)
         iewStage->updateLSQNextCycle = true;
     }
 
-    DPRINTF(O3liteLSQUnit, "Completing store [sn:%lli], idx:%i, store head "
+    DPRINTF(LSQUnit, "Completing store [sn:%lli], idx:%i, store head "
             "idx:%i\n",
             storeQueue[store_idx].inst->seqNum, store_idx, storeHead);
 
     if (isStalled() &&
         storeQueue[store_idx].inst->seqNum == stallingStoreIsn) {
-        DPRINTF(O3liteLSQUnit, "Unstalling, stalling store [sn:%lli] "
+        DPRINTF(LSQUnit, "Unstalling, stalling store [sn:%lli] "
                 "load idx:%i\n",
                 stallingStoreIsn, stallingLoadIdx);
         stalled = false;
@@ -1031,7 +1031,7 @@ O3liteLSQUnit<Impl>::completeStore(int store_idx)
 
 template <class Impl>
 bool
-O3liteLSQUnit<Impl>::sendStore(PacketPtr data_pkt)
+LSQUnit<Impl>::sendStore(PacketPtr data_pkt)
 {
     if (!dcachePort->sendTiming(data_pkt)) {
         // Need to handle becoming blocked on a store.
@@ -1047,10 +1047,10 @@ O3liteLSQUnit<Impl>::sendStore(PacketPtr data_pkt)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::recvRetry()
+LSQUnit<Impl>::recvRetry()
 {
     if (isStoreBlocked) {
-        DPRINTF(O3liteLSQUnit, "Receiving retry: store blocked\n");
+        DPRINTF(LSQUnit, "Receiving retry: store blocked\n");
         assert(retryPkt != NULL);
 
         if (dcachePort->sendTiming(retryPkt)) {
@@ -1078,16 +1078,16 @@ O3liteLSQUnit<Impl>::recvRetry()
             lsq->setRetryTid(lsqID);
         }
     } else if (isLoadBlocked) {
-        DPRINTF(O3liteLSQUnit, "Loads squash themselves and all younger insts, "
+        DPRINTF(LSQUnit, "Loads squash themselves and all younger insts, "
                 "no need to resend packet.\n");
     } else {
-        DPRINTF(O3liteLSQUnit, "Retry received but LSQ is no longer blocked.\n");
+        DPRINTF(LSQUnit, "Retry received but LSQ is no longer blocked.\n");
     }
 }
 
 template <class Impl>
 inline void
-O3liteLSQUnit<Impl>::incrStIdx(int &store_idx)
+LSQUnit<Impl>::incrStIdx(int &store_idx)
 {
     if (++store_idx >= SQEntries)
         store_idx = 0;
@@ -1095,7 +1095,7 @@ O3liteLSQUnit<Impl>::incrStIdx(int &store_idx)
 
 template <class Impl>
 inline void
-O3liteLSQUnit<Impl>::decrStIdx(int &store_idx)
+LSQUnit<Impl>::decrStIdx(int &store_idx)
 {
     if (--store_idx < 0)
         store_idx += SQEntries;
@@ -1103,7 +1103,7 @@ O3liteLSQUnit<Impl>::decrStIdx(int &store_idx)
 
 template <class Impl>
 inline void
-O3liteLSQUnit<Impl>::incrLdIdx(int &load_idx)
+LSQUnit<Impl>::incrLdIdx(int &load_idx)
 {
     if (++load_idx >= LQEntries)
         load_idx = 0;
@@ -1111,7 +1111,7 @@ O3liteLSQUnit<Impl>::incrLdIdx(int &load_idx)
 
 template <class Impl>
 inline void
-O3liteLSQUnit<Impl>::decrLdIdx(int &load_idx)
+LSQUnit<Impl>::decrLdIdx(int &load_idx)
 {
     if (--load_idx < 0)
         load_idx += LQEntries;
@@ -1119,7 +1119,7 @@ O3liteLSQUnit<Impl>::decrLdIdx(int &load_idx)
 
 template <class Impl>
 void
-O3liteLSQUnit<Impl>::dumpInsts()
+LSQUnit<Impl>::dumpInsts()
 {
     cprintf("Load store queue: Dumping instructions.\n");
     cprintf("Load queue size: %i\n", loads);
