@@ -30,13 +30,13 @@ from m5.defines import buildEnv
 from m5.params import *
 from m5.proxy import *
 from BaseCPU import BaseCPU
-from FUPool import *
+from O3liteFUPool import *
 
 if buildEnv['USE_CHECKER']:
     from O3Checker import O3Checker
 
-class DerivO3CPU(BaseCPU):
-    type = 'DerivO3CPU'
+class DerivO3liteCPU(BaseCPU):
+    type = 'DerivO3liteCPU'
     activity = Param.Unsigned(0, "Initial count")
 
     if buildEnv['USE_CHECKER']:
@@ -87,7 +87,7 @@ class DerivO3CPU(BaseCPU):
     issueWidth = Param.Unsigned(8, "Issue width")
     wbWidth = Param.Unsigned(8, "Writeback width")
     wbDepth = Param.Unsigned(1, "Writeback depth")
-    fuPool = Param.FUPool(DefaultFUPool(), "Functional Unit pool")
+    fuPool = Param.O3liteFUPool(DefaultO3liteFUPool(), "Functional Unit pool")
 
     iewToCommitDelay = Param.Unsigned(1, "Issue/Execute/Writeback to commit "
                "delay")

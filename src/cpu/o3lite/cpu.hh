@@ -29,8 +29,8 @@
  *          Korey Sewell
  */
 
-#ifndef __CPU_O3lite_CPU_HH__
-#define __CPU_O3lite_CPU_HH__
+#ifndef __CPU_O3LITE_CPU_HH__
+#define __CPU_O3LITE_CPU_HH__
 
 #include <iostream>
 #include <list>
@@ -49,8 +49,8 @@
 #include "cpu/simple_thread.hh"
 #include "cpu/o3lite/comm.hh"
 #include "cpu/o3lite/cpu_policy.hh"
-#include "cpu/o3/scoreboard.hh"
-#include "cpu/o3/thread_state.hh"
+#include "cpu/o3lite/scoreboard.hh"
+#include "cpu/o3lite/thread_state.hh"
 //#include "cpu/o3/thread_context.hh"
 #include "sim/process.hh"
 
@@ -60,7 +60,7 @@ template <class>
 class Checker;
 class ThreadContext;
 template <class>
-class O3ThreadContext;
+class O3liteThreadContext;
 
 class Checkpoint;
 class MemObject;
@@ -91,12 +91,14 @@ class FullO3liteCPU : public BaseO3liteCPU
     typedef typename Impl::DynInstPtr DynInstPtr;
     typedef typename Impl::O3CPU O3CPU;
 
-    typedef O3ThreadState<Impl> ImplState;
-    typedef O3ThreadState<Impl> Thread;
+    typedef typename Impl::CPUPol::Scoreboard Scoreboard;
+
+    typedef O3liteThreadState<Impl> ImplState;
+    typedef O3liteThreadState<Impl> Thread;
 
     typedef typename std::list<DynInstPtr>::iterator ListIt;
 
-    friend class O3ThreadContext<Impl>;
+    friend class O3liteThreadContext<Impl>;
 
   public:
     enum Status {
@@ -254,7 +256,7 @@ class FullO3liteCPU : public BaseO3liteCPU
 
   public:
     /** Constructs a CPU with the given parameters. */
-    FullO3liteCPU(DerivO3CPUParams *params);
+    FullO3liteCPU(DerivO3liteCPUParams *params);
     /** Destructor. */
     ~FullO3liteCPU();
 
@@ -745,4 +747,4 @@ class FullO3liteCPU : public BaseO3liteCPU
     Stats::Formula totalIpc;
 };
 
-#endif // __CPU_O3_CPU_HH__
+#endif // __CPU_O3LITE_CPU_HH__

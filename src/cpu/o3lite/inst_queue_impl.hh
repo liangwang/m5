@@ -32,17 +32,17 @@
 #include <limits>
 #include <vector>
 
-#include "cpu/o3/fu_pool.hh"
-#include "cpu/o3/inst_queue.hh"
+#include "cpu/o3lite/fu_pool.hh"
+#include "cpu/o3lite/inst_queue.hh"
 #include "enums/OpClass.hh"
-#include "params/DerivO3CPU.hh"
+#include "params/DerivO3liteCPU.hh"
 #include "sim/core.hh"
 
 using namespace std;
 
 template <class Impl>
-InstructionQueue<Impl>::FUCompletion::FUCompletion(DynInstPtr &_inst,
-    int fu_idx, InstructionQueue<Impl> *iq_ptr)
+O3liteInstructionQueue<Impl>::FUCompletion::FUCompletion(DynInstPtr &_inst,
+    int fu_idx, O3liteInstructionQueue<Impl> *iq_ptr)
     : Event(Stat_Event_Pri), inst(_inst), fuIdx(fu_idx), iqPtr(iq_ptr),
       freeFU(false)
 {
@@ -51,7 +51,7 @@ InstructionQueue<Impl>::FUCompletion::FUCompletion(DynInstPtr &_inst,
 
 template <class Impl>
 void
-InstructionQueue<Impl>::FUCompletion::process()
+O3liteInstructionQueue<Impl>::FUCompletion::process()
 {
     iqPtr->processFUCompletion(inst, freeFU ? fuIdx : -1);
     inst = NULL;
@@ -60,14 +60,14 @@ InstructionQueue<Impl>::FUCompletion::process()
 
 template <class Impl>
 const char *
-InstructionQueue<Impl>::FUCompletion::description() const
+O3liteInstructionQueue<Impl>::FUCompletion::description() const
 {
     return "Functional unit completion";
 }
 
 template <class Impl>
-InstructionQueue<Impl>::InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr,
-                                         DerivO3CPUParams *params)
+O3liteInstructionQueue<Impl>::O3liteInstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr,
+                                         DerivO3liteCPUParams *params)
     : cpu(cpu_ptr),
       iewStage(iew_ptr),
       fuPool(params->fuPool),
@@ -156,7 +156,7 @@ InstructionQueue<Impl>::InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr,
 }
 
 template <class Impl>
-InstructionQueue<Impl>::~InstructionQueue()
+O3liteInstructionQueue<Impl>::~O3liteInstructionQueue()
 {
     dependGraph.reset();
 #ifdef DEBUG
@@ -167,14 +167,14 @@ InstructionQueue<Impl>::~InstructionQueue()
 
 template <class Impl>
 std::string
-InstructionQueue<Impl>::name() const
+O3liteInstructionQueue<Impl>::name() const
 {
     return cpu->name() + ".iq";
 }
 
 template <class Impl>
 void
-InstructionQueue<Impl>::regStats()
+O3liteInstructionQueue<Impl>::regStats()
 {
     using namespace Stats;
     iqInstsAdded
@@ -330,7 +330,7 @@ InstructionQueue<Impl>::regStats()
 
 template <class Impl>
 void
-InstructionQueue<Impl>::resetState()
+O3liteInstructionQueue<Impl>::resetState()
 {
     //Initialize thread IQ counts
     for (ThreadID tid = 0; tid <numThreads; tid++) {
@@ -366,21 +366,21 @@ InstructionQueue<Impl>::resetState()
 
 template <class Impl>
 void
-InstructionQueue<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
+O3liteInstructionQueue<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
 {
     activeThreads = at_ptr;
 }
 
 template <class Impl>
 void
-InstructionQueue<Impl>::setIssueToExecuteQueue(TimeBuffer<IssueStruct> *i2e_ptr)
+O3liteInstructionQueue<Impl>::setIssueToExecuteQueue(TimeBuffer<IssueStruct> *i2e_ptr)
 {
       issueToExecuteQueue = i2e_ptr;
 }
 
 template <class Impl>
 void
-InstructionQueue<Impl>::setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr)
+O3liteInstructionQueue<Impl>::setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr)
 {
     timeBuffer = tb_ptr;
 
@@ -389,7 +389,7 @@ InstructionQueue<Impl>::setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::switchOut()
+O3liteInstructionQueue<Impl>::switchOut()
 {
 /*
     if (!instList[0].empty() || (numEntries != freeEntries) ||
@@ -409,14 +409,14 @@ InstructionQueue<Impl>::switchOut()
 
 template <class Impl>
 void
-InstructionQueue<Impl>::takeOverFrom()
+O3liteInstructionQueue<Impl>::takeOverFrom()
 {
     switchedOut = false;
 }
 
 template <class Impl>
 int
-InstructionQueue<Impl>::entryAmount(ThreadID num_threads)
+O3liteInstructionQueue<Impl>::entryAmount(ThreadID num_threads)
 {
     if (iqPolicy == Partitioned) {
         return numEntries / num_threads;
@@ -428,7 +428,7 @@ InstructionQueue<Impl>::entryAmount(ThreadID num_threads)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::resetEntries()
+O3liteInstructionQueue<Impl>::resetEntries()
 {
     if (iqPolicy != Dynamic || numThreads > 1) {
         int active_threads = activeThreads->size();
@@ -450,14 +450,14 @@ InstructionQueue<Impl>::resetEntries()
 
 template <class Impl>
 unsigned
-InstructionQueue<Impl>::numFreeEntries()
+O3liteInstructionQueue<Impl>::numFreeEntries()
 {
     return freeEntries;
 }
 
 template <class Impl>
 unsigned
-InstructionQueue<Impl>::numFreeEntries(ThreadID tid)
+O3liteInstructionQueue<Impl>::numFreeEntries(ThreadID tid)
 {
     return maxEntries[tid] - count[tid];
 }
@@ -466,7 +466,7 @@ InstructionQueue<Impl>::numFreeEntries(ThreadID tid)
 // will be issued this cycle.
 template <class Impl>
 bool
-InstructionQueue<Impl>::isFull()
+O3liteInstructionQueue<Impl>::isFull()
 {
     if (freeEntries == 0) {
         return(true);
@@ -477,7 +477,7 @@ InstructionQueue<Impl>::isFull()
 
 template <class Impl>
 bool
-InstructionQueue<Impl>::isFull(ThreadID tid)
+O3liteInstructionQueue<Impl>::isFull(ThreadID tid)
 {
     if (numFreeEntries(tid) == 0) {
         return(true);
@@ -488,7 +488,7 @@ InstructionQueue<Impl>::isFull(ThreadID tid)
 
 template <class Impl>
 bool
-InstructionQueue<Impl>::hasReadyInsts()
+O3liteInstructionQueue<Impl>::hasReadyInsts()
 {
     if (!listOrder.empty()) {
         return true;
@@ -505,7 +505,7 @@ InstructionQueue<Impl>::hasReadyInsts()
 
 template <class Impl>
 void
-InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
+O3liteInstructionQueue<Impl>::insert(DynInstPtr &new_inst)
 {
     // Make sure the instruction is valid
     assert(new_inst);
@@ -549,7 +549,7 @@ InstructionQueue<Impl>::insert(DynInstPtr &new_inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::insertNonSpec(DynInstPtr &new_inst)
+O3liteInstructionQueue<Impl>::insertNonSpec(DynInstPtr &new_inst)
 {
     // @todo: Clean up this code; can do it by setting inst as unable
     // to issue, then calling normal insert on the inst.
@@ -589,7 +589,7 @@ InstructionQueue<Impl>::insertNonSpec(DynInstPtr &new_inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::insertBarrier(DynInstPtr &barr_inst)
+O3liteInstructionQueue<Impl>::insertBarrier(DynInstPtr &barr_inst)
 {
     memDepUnit[barr_inst->threadNumber].insertBarrier(barr_inst);
 
@@ -598,7 +598,7 @@ InstructionQueue<Impl>::insertBarrier(DynInstPtr &barr_inst)
 
 template <class Impl>
 typename Impl::DynInstPtr
-InstructionQueue<Impl>::getInstToExecute()
+O3liteInstructionQueue<Impl>::getInstToExecute()
 {
     assert(!instsToExecute.empty());
     DynInstPtr inst = instsToExecute.front();
@@ -608,7 +608,7 @@ InstructionQueue<Impl>::getInstToExecute()
 
 template <class Impl>
 void
-InstructionQueue<Impl>::addToOrderList(OpClass op_class)
+O3liteInstructionQueue<Impl>::addToOrderList(OpClass op_class)
 {
     assert(!readyInsts[op_class].empty());
 
@@ -635,7 +635,7 @@ InstructionQueue<Impl>::addToOrderList(OpClass op_class)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::moveToYoungerInst(ListOrderIt list_order_it)
+O3liteInstructionQueue<Impl>::moveToYoungerInst(ListOrderIt list_order_it)
 {
     // Get iterator of next item on the list
     // Delete the original iterator
@@ -661,7 +661,7 @@ InstructionQueue<Impl>::moveToYoungerInst(ListOrderIt list_order_it)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::processFUCompletion(DynInstPtr &inst, int fu_idx)
+O3liteInstructionQueue<Impl>::processFUCompletion(DynInstPtr &inst, int fu_idx)
 {
     DPRINTF(IQ, "Processing FU completion [sn:%lli]\n", inst->seqNum);
     // The CPU could have been sleeping until this op completed (*extremely*
@@ -689,7 +689,7 @@ InstructionQueue<Impl>::processFUCompletion(DynInstPtr &inst, int fu_idx)
 // wastes time and forces jumps.
 template <class Impl>
 void
-InstructionQueue<Impl>::scheduleReadyInsts()
+O3liteInstructionQueue<Impl>::scheduleReadyInsts()
 {
     DPRINTF(IQ, "Attempting to schedule ready instructions from "
             "the IQ.\n");
@@ -828,7 +828,7 @@ InstructionQueue<Impl>::scheduleReadyInsts()
 
 template <class Impl>
 void
-InstructionQueue<Impl>::scheduleNonSpec(const InstSeqNum &inst)
+O3liteInstructionQueue<Impl>::scheduleNonSpec(const InstSeqNum &inst)
 {
     DPRINTF(IQ, "Marking nonspeculative instruction [sn:%lli] as ready "
             "to execute.\n", inst);
@@ -856,7 +856,7 @@ InstructionQueue<Impl>::scheduleNonSpec(const InstSeqNum &inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::commit(const InstSeqNum &inst, ThreadID tid)
+O3liteInstructionQueue<Impl>::commit(const InstSeqNum &inst, ThreadID tid)
 {
     DPRINTF(IQ, "[tid:%i]: Committing instructions older than [sn:%i]\n",
             tid,inst);
@@ -874,7 +874,7 @@ InstructionQueue<Impl>::commit(const InstSeqNum &inst, ThreadID tid)
 
 template <class Impl>
 int
-InstructionQueue<Impl>::wakeDependents(DynInstPtr &completed_inst)
+O3liteInstructionQueue<Impl>::wakeDependents(DynInstPtr &completed_inst)
 {
     int dependents = 0;
 
@@ -951,7 +951,7 @@ InstructionQueue<Impl>::wakeDependents(DynInstPtr &completed_inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::addReadyMemInst(DynInstPtr &ready_inst)
+O3liteInstructionQueue<Impl>::addReadyMemInst(DynInstPtr &ready_inst)
 {
     OpClass op_class = ready_inst->opClass();
 
@@ -974,7 +974,7 @@ InstructionQueue<Impl>::addReadyMemInst(DynInstPtr &ready_inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::rescheduleMemInst(DynInstPtr &resched_inst)
+O3liteInstructionQueue<Impl>::rescheduleMemInst(DynInstPtr &resched_inst)
 {
     DPRINTF(IQ, "Rescheduling mem inst [sn:%lli]\n", resched_inst->seqNum);
     resched_inst->clearCanIssue();
@@ -983,14 +983,14 @@ InstructionQueue<Impl>::rescheduleMemInst(DynInstPtr &resched_inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::replayMemInst(DynInstPtr &replay_inst)
+O3liteInstructionQueue<Impl>::replayMemInst(DynInstPtr &replay_inst)
 {
     memDepUnit[replay_inst->threadNumber].replay(replay_inst);
 }
 
 template <class Impl>
 void
-InstructionQueue<Impl>::completeMemInst(DynInstPtr &completed_inst)
+O3liteInstructionQueue<Impl>::completeMemInst(DynInstPtr &completed_inst)
 {
     ThreadID tid = completed_inst->threadNumber;
 
@@ -1007,7 +1007,7 @@ InstructionQueue<Impl>::completeMemInst(DynInstPtr &completed_inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::violation(DynInstPtr &store,
+O3liteInstructionQueue<Impl>::violation(DynInstPtr &store,
                                   DynInstPtr &faulting_load)
 {
     memDepUnit[store->threadNumber].violation(store, faulting_load);
@@ -1015,7 +1015,7 @@ InstructionQueue<Impl>::violation(DynInstPtr &store,
 
 template <class Impl>
 void
-InstructionQueue<Impl>::squash(ThreadID tid)
+O3liteInstructionQueue<Impl>::squash(ThreadID tid)
 {
     DPRINTF(IQ, "[tid:%i]: Starting to squash instructions in "
             "the IQ.\n", tid);
@@ -1040,7 +1040,7 @@ InstructionQueue<Impl>::squash(ThreadID tid)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::doSquash(ThreadID tid)
+O3liteInstructionQueue<Impl>::doSquash(ThreadID tid)
 {
     // Start at the tail.
     ListIt squash_it = instList[tid].end();
@@ -1143,7 +1143,7 @@ InstructionQueue<Impl>::doSquash(ThreadID tid)
 
 template <class Impl>
 bool
-InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
+O3liteInstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
 {
     // Loop through the instruction's source registers, adding
     // them to the dependency list if they are not ready.
@@ -1189,7 +1189,7 @@ InstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::addToProducers(DynInstPtr &new_inst)
+O3liteInstructionQueue<Impl>::addToProducers(DynInstPtr &new_inst)
 {
     // Nothing really needs to be marked when an instruction becomes
     // the producer of a register's value, but for convenience a ptr
@@ -1225,7 +1225,7 @@ InstructionQueue<Impl>::addToProducers(DynInstPtr &new_inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::addIfReady(DynInstPtr &inst)
+O3liteInstructionQueue<Impl>::addIfReady(DynInstPtr &inst)
 {
     // If the instruction now has all of its source registers
     // available, then add it to the list of ready instructions.
@@ -1265,7 +1265,7 @@ InstructionQueue<Impl>::addIfReady(DynInstPtr &inst)
 
 template <class Impl>
 int
-InstructionQueue<Impl>::countInsts()
+O3liteInstructionQueue<Impl>::countInsts()
 {
 #if 0
     //ksewell:This works but definitely could use a cleaner write
@@ -1301,7 +1301,7 @@ InstructionQueue<Impl>::countInsts()
 
 template <class Impl>
 void
-InstructionQueue<Impl>::dumpLists()
+O3liteInstructionQueue<Impl>::dumpLists()
 {
     for (int i = 0; i < Num_OpClasses; ++i) {
         cprintf("Ready list %i size: %i\n", i, readyInsts[i].size());
@@ -1344,7 +1344,7 @@ InstructionQueue<Impl>::dumpLists()
 
 template <class Impl>
 void
-InstructionQueue<Impl>::dumpInsts()
+O3liteInstructionQueue<Impl>::dumpInsts()
 {
     for (ThreadID tid = 0; tid < numThreads; ++tid) {
         int num = 0;
@@ -1430,7 +1430,7 @@ InstructionQueue<Impl>::dumpInsts()
 // begin o3lite
 template <class Impl>
 bool
-InstructionQueue<Impl>::checkOversub(DynInstPtr &inst)
+O3liteInstructionQueue<Impl>::checkOversub(DynInstPtr &inst)
 {
   bool return_val = false;
 
@@ -1521,7 +1521,7 @@ InstructionQueue<Impl>::checkOversub(DynInstPtr &inst)
 
 template <class Impl>
 bool
-InstructionQueue<Impl>::isOverSubscriber(DynInstPtr &inst)
+O3liteInstructionQueue<Impl>::isOverSubscriber(DynInstPtr &inst)
 {
     assert(inst);
 
@@ -1543,7 +1543,7 @@ InstructionQueue<Impl>::isOverSubscriber(DynInstPtr &inst)
 
 template <class Impl>
 bool
-InstructionQueue<Impl>::completeProducer(DynInstPtr &inst)
+O3liteInstructionQueue<Impl>::completeProducer(DynInstPtr &inst)
 {
   assert(inst);
   ThreadID tid = inst->threadNumber;
@@ -1569,7 +1569,7 @@ InstructionQueue<Impl>::completeProducer(DynInstPtr &inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
+O3liteInstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
 {
   assert(new_inst);
 
@@ -1623,7 +1623,7 @@ InstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
 
 template <class Impl>
 void
-InstructionQueue<Impl>::resetAllSubscribers()
+O3liteInstructionQueue<Impl>::resetAllSubscribers()
 {
     // reset number of subscribers array
     std::vector<int>::iterator it = numSubscribers.begin();

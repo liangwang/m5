@@ -28,8 +28,8 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3lite_IEW_HH__
-#define __CPU_O3lite_IEW_HH__
+#ifndef __CPU_O3LITE_IEW_HH__
+#define __CPU_O3LITE_IEW_HH__
 
 #include <queue>
 
@@ -37,11 +37,11 @@
 #include "base/timebuf.hh"
 #include "config/full_system.hh"
 #include "cpu/o3lite/comm.hh"
-#include "cpu/o3/scoreboard.hh"
+#include "cpu/o3lite/scoreboard.hh"
 #include "cpu/o3lite/lsq.hh"
 
 class DerivO3liteCPUParams;
-class FUPool;
+class O3liteFUPool;
 
 /**
  * O3liteIEW handles both single threaded and SMT IEW
@@ -70,10 +70,12 @@ class O3liteIEW
     typedef typename Impl::CPUPol CPUPol;
     typedef typename Impl::DynInstPtr DynInstPtr;
     typedef typename Impl::O3CPU O3CPU;
+    typedef typename Impl::FUPool FUPool;
 
     typedef typename CPUPol::IQ IQ;
     typedef typename CPUPol::RenameMap RenameMap;
     typedef typename CPUPol::LSQ LSQ;
+    typedef typename CPUPol::Scoreboard Scoreboard;
 
     typedef typename CPUPol::TimeStruct TimeStruct;
     typedef typename CPUPol::IEWStruct IEWStruct;

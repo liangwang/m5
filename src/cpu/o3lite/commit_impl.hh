@@ -41,7 +41,7 @@
 #include "config/use_checker.hh"
 #include "cpu/exetrace.hh"
 #include "cpu/o3lite/commit.hh"
-#include "cpu/o3/thread_state.hh"
+#include "cpu/o3lite/thread_state.hh"
 #include "params/DerivO3liteCPU.hh"
 
 #if USE_CHECKER
@@ -75,7 +75,7 @@ O3liteCommit<Impl>::TrapEvent::description() const
 }
 
 template <class Impl>
-O3liteCommit<Impl>::O3liteCommit(O3CPU *_cpu, DerivO3CPUParams *params)
+O3liteCommit<Impl>::O3liteCommit(O3CPU *_cpu, DerivO3liteCPUParams *params)
     : cpu(_cpu),
       squashCounter(0),
       iewToCommitDelay(params->iewToCommitDelay),

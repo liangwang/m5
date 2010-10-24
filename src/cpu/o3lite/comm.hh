@@ -37,7 +37,74 @@
 #include "cpu/inst_seq.hh"
 #include "sim/faults.hh"
 
-#include "cpu/o3/comm.hh"
+// Typedef for physical register index type. Although the Impl would be the
+// most likely location for this, there are a few classes that need this
+// typedef yet are not templated on the Impl. For now it will be defined here.
+typedef short int PhysRegIndex;
+
+/** Struct that defines the information passed from fetch to decode. */
+template<class Impl>
+struct O3liteFetchDefaultDecode {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+    Fault fetchFault;
+    InstSeqNum fetchFaultSN;
+    bool clearFetchFault;
+};
+
+/** Struct that defines the information passed from decode to rename. */
+template<class Impl>
+struct O3liteDecodeDefaultRename {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+};
+
+/** Struct that defines the information passed from rename to IEW. */
+template<class Impl>
+struct O3liteRenameDefaultIEW {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+};
+
+/** Struct that defines the information passed from IEW to commit. */
+template<class Impl>
+struct O3liteIEWDefaultCommit {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+
+    bool squash[Impl::MaxThreads];
+    bool branchMispredict[Impl::MaxThreads];
+    bool branchTaken[Impl::MaxThreads];
+    Addr mispredPC[Impl::MaxThreads];
+    Addr nextPC[Impl::MaxThreads];
+    Addr nextNPC[Impl::MaxThreads];
+    Addr nextMicroPC[Impl::MaxThreads];
+    InstSeqNum squashedSeqNum[Impl::MaxThreads];
+
+    bool includeSquashInst[Impl::MaxThreads];
+};
+
+template<class Impl>
+struct O3liteIssueStruct {
+    typedef typename Impl::DynInstPtr DynInstPtr;
+
+    int size;
+
+    DynInstPtr insts[Impl::MaxWidth];
+};
+
 
 /** Struct that defines all backwards communication. */
 template<class Impl>

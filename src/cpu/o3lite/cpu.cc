@@ -35,9 +35,9 @@
 #include "cpu/activity.hh"
 #include "cpu/simple_thread.hh"
 #include "cpu/thread_context.hh"
-#include "cpu/o3/isa_specific.hh"
+#include "cpu/o3lite/isa_specific.hh"
 #include "cpu/o3lite/cpu.hh"
-#include "cpu/o3/thread_context.hh"
+#include "cpu/o3lite/thread_context.hh"
 #include "enums/MemoryMode.hh"
 #include "sim/core.hh"
 #include "sim/stat_control.hh"
@@ -155,7 +155,7 @@ FullO3liteCPU<Impl>::DeallocateContextEvent::description() const
 }
 
 template <class Impl>
-FullO3liteCPU<Impl>::FullO3liteCPU(DerivO3CPUParams *params)
+FullO3liteCPU<Impl>::FullO3liteCPU(DerivO3liteCPUParams *params)
     : BaseO3liteCPU(params),
       itb(params->itb),
       dtb(params->dtb),
@@ -379,7 +379,7 @@ FullO3liteCPU<Impl>::FullO3liteCPU(DerivO3CPUParams *params)
         ThreadContext *tc;
 
         // Setup the TC that will serve as the interface to the threads/CPU.
-        O3ThreadContext<Impl> *o3_tc = new O3ThreadContext<Impl>;
+        O3liteThreadContext<Impl> *o3_tc = new O3liteThreadContext<Impl>;
 
         tc = o3_tc;
 
@@ -1661,4 +1661,4 @@ FullO3liteCPU<Impl>::updateThreadPriority()
 }
 
 // Forward declaration of FullO3liteCPU.
-template class FullO3liteCPU<O3CPUImpl>;
+template class FullO3liteCPU<O3liteCPUImpl>;

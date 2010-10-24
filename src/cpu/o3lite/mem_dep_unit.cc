@@ -28,22 +28,22 @@
  * Authors: Kevin Lim
  */
 
-#include "cpu/o3/isa_specific.hh"
-#include "cpu/o3/store_set.hh"
-#include "cpu/o3/mem_dep_unit_impl.hh"
+#include "cpu/o3lite/isa_specific.hh"
+#include "cpu/o3lite/store_set.hh"
+#include "cpu/o3lite/mem_dep_unit_impl.hh"
 
 // Force instantation of memory dependency unit using store sets and
 // O3CPUImpl.
-template class MemDepUnit<StoreSet, O3CPUImpl>;
+template class O3liteMemDepUnit<O3liteStoreSet, O3liteCPUImpl>;
 
 #ifdef DEBUG
 template <>
 int
-MemDepUnit<StoreSet, O3CPUImpl>::MemDepEntry::memdep_count = 0;
+O3liteMemDepUnit<O3liteStoreSet, O3liteCPUImpl>::MemDepEntry::memdep_count = 0;
 template <>
 int
-MemDepUnit<StoreSet, O3CPUImpl>::MemDepEntry::memdep_insert = 0;
+O3liteMemDepUnit<O3liteStoreSet, O3liteCPUImpl>::MemDepEntry::memdep_insert = 0;
 template <>
 int
-MemDepUnit<StoreSet, O3CPUImpl>::MemDepEntry::memdep_erase = 0;
+O3liteMemDepUnit<O3liteStoreSet, O3liteCPUImpl>::MemDepEntry::memdep_erase = 0;
 #endif

@@ -62,9 +62,8 @@ class InOrderDynInst;
 
 // **o3lite
 class O3liteCPUImpl;
-//template <class Impl> class O3liteDynInst;
-//typedef O3liteDynInst<O3liteCPUImpl> O3liteDynInst;
-typedef BaseO3DynInst<O3liteCPUImpl> O3liteDynInst;
+template <class Impl> class BaseO3liteDynInst;
+typedef BaseO3liteDynInst<O3liteCPUImpl> O3liteDynInst;
 
 class CheckerCPU;
 class FastCPU;

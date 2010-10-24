@@ -40,10 +40,10 @@
 class DerivO3liteCPUParams;
 
 template <class>
-class O3ThreadState;
+class O3liteThreadState;
 
 /**
- * DefaultCommit handles single threaded and SMT commit. Its width is
+ * O3liteCommit handles single threaded and SMT commit. Its width is
  * specified by the parameters; each cycle it tries to commit that
  * many instructions. The SMT policy decides which thread it tries to
  * commit instructions from. Non- speculative instructions must reach
@@ -65,7 +65,7 @@ class O3ThreadState;
  * remove a certain number of instructions per cycle.
  */
 template<class Impl>
-class DefaultCommit
+class O3liteCommit
 {
   public:
     // Typedefs from the Impl.
@@ -84,18 +84,18 @@ class DefaultCommit
     typedef typename CPUPol::Fetch Fetch;
     typedef typename CPUPol::IEW IEW;
 
-    typedef O3ThreadState<Impl> Thread;
+    typedef O3liteThreadState<Impl> Thread;
 
     /** Event class used to schedule a squash due to a trap (fault or
      * interrupt) to happen on a specific cycle.
      */
     class TrapEvent : public Event {
       private:
-        DefaultCommit<Impl> *commit;
+        O3liteCommit<Impl> *commit;
         ThreadID tid;
 
       public:
-        TrapEvent(DefaultCommit<Impl> *_commit, ThreadID _tid);
+        TrapEvent(O3liteCommit<Impl> *_commit, ThreadID _tid);
 
         void process();
         const char *description() const;
@@ -136,10 +136,10 @@ class DefaultCommit
     CommitPolicy commitPolicy;
 
   public:
-    /** Construct a DefaultCommit with the given parameters. */
-    DefaultCommit(O3CPU *_cpu, DerivO3CPUParams *params);
+    /** Construct a O3liteCommit with the given parameters. */
+    O3liteCommit(O3CPU *_cpu, DerivO3liteCPUParams *params);
 
-    /** Returns the name of the DefaultCommit. */
+    /** Returns the name of the O3liteCommit. */
     std::string name() const;
 
     /** Registers statistics. */
@@ -496,4 +496,4 @@ class DefaultCommit
     Stats::Vector commitEligible;
 };
 
-#endif // __CPU_O3_COMMIT_HH__
+#endif // __CPU_O3LITE_COMMIT_HH__

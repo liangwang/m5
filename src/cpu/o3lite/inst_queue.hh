@@ -28,8 +28,8 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3_INST_QUEUE_HH__
-#define __CPU_O3_INST_QUEUE_HH__
+#ifndef __CPU_O3LITE_INST_QUEUE_HH__
+#define __CPU_O3LITE_INST_QUEUE_HH__
 
 #include <list>
 #include <map>
@@ -40,12 +40,12 @@
 #include "base/timebuf.hh"
 #include "base/types.hh"
 #include "cpu/inst_seq.hh"
-#include "cpu/o3/dep_graph.hh"
+#include "cpu/o3lite/dep_graph.hh"
 #include "cpu/op_class.hh"
 #include "sim/eventq.hh"
 
-class DerivO3CPUParams;
-class FUPool;
+class DerivO3liteCPUParams;
+class O3liteFUPool;
 class MemInterface;
 
 /**
@@ -66,12 +66,14 @@ class MemInterface;
  * @todo: Make IQ able to handle multiple FU pools.
  */
 template <class Impl>
-class InstructionQueue
+class O3liteInstructionQueue
 {
   public:
     //Typedefs from the Impl.
     typedef typename Impl::O3CPU O3CPU;
     typedef typename Impl::DynInstPtr DynInstPtr;
+    typedef typename Impl::FUPool FUPool;
+    typedef typename Impl::DependencyGraph DependencyGraph;
 
     typedef typename Impl::CPUPol::IEW IEW;
     typedef typename Impl::CPUPol::MemDepUnit MemDepUnit;
@@ -80,6 +82,7 @@ class InstructionQueue
 
     // Typedef of iterator through the list of instructions.
     typedef typename std::list<DynInstPtr>::iterator ListIt;
+
 
     friend class Impl::O3CPU;
 
@@ -93,7 +96,7 @@ class InstructionQueue
         int fuIdx;
 
         /** Pointer back to the instruction queue. */
-        InstructionQueue<Impl> *iqPtr;
+        O3liteInstructionQueue<Impl> *iqPtr;
 
         /** Should the FU be added to the list to be freed upon
          * completing this event.
@@ -103,7 +106,7 @@ class InstructionQueue
       public:
         /** Construct a FU completion event. */
         FUCompletion(DynInstPtr &_inst, int fu_idx,
-                     InstructionQueue<Impl> *iq_ptr);
+                     O3liteInstructionQueue<Impl> *iq_ptr);
 
         virtual void process();
         virtual const char *description() const;
@@ -111,10 +114,10 @@ class InstructionQueue
     };
 
     /** Constructs an IQ. */
-    InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params);
+    O3liteInstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3liteCPUParams *params);
 
     /** Destructs the IQ. */
-    ~InstructionQueue();
+    ~O3liteInstructionQueue();
 
     /** Returns the name of the IQ. */
     std::string name() const;
@@ -351,7 +354,7 @@ class InstructionQueue
      */
     void moveToYoungerInst(ListOrderIt age_order_it);
 
-    DependencyGraph<DynInstPtr> dependGraph;
+    DependencyGraph dependGraph;
 
     //////////////////////////////////////
     // Various parameters
@@ -533,4 +536,4 @@ class InstructionQueue
     void resetAllSubscribers();
 };
 
-#endif //__CPU_O3_INST_QUEUE_HH__
+#endif //__CPU_O3LITE_INST_QUEUE_HH__

@@ -32,14 +32,14 @@
 #include <list>
 #include <string>
 
-#include "cpu/o3/lsq.hh"
-#include "params/DerivO3CPU.hh"
+#include "cpu/o3lite/lsq.hh"
+#include "params/DerivO3liteCPU.hh"
 
 using namespace std;
 
 template<class Impl>
 void
-LSQ<Impl>::DcachePort::setPeer(Port *port)
+O3liteLSQ<Impl>::DcachePort::setPeer(Port *port)
 {
     Port::setPeer(port);
 
@@ -52,7 +52,7 @@ LSQ<Impl>::DcachePort::setPeer(Port *port)
 
 template <class Impl>
 Tick
-LSQ<Impl>::DcachePort::recvAtomic(PacketPtr pkt)
+O3liteLSQ<Impl>::DcachePort::recvAtomic(PacketPtr pkt)
 {
     panic("O3CPU model does not work with atomic mode!");
     return curTick;
@@ -60,14 +60,14 @@ LSQ<Impl>::DcachePort::recvAtomic(PacketPtr pkt)
 
 template <class Impl>
 void
-LSQ<Impl>::DcachePort::recvFunctional(PacketPtr pkt)
+O3liteLSQ<Impl>::DcachePort::recvFunctional(PacketPtr pkt)
 {
     DPRINTF(LSQ, "LSQ doesn't update things on a recvFunctional.");
 }
 
 template <class Impl>
 void
-LSQ<Impl>::DcachePort::recvStatusChange(Status status)
+O3liteLSQ<Impl>::DcachePort::recvStatusChange(Status status)
 {
     if (status == RangeChange) {
         if (!snoopRangeSent) {
@@ -81,7 +81,7 @@ LSQ<Impl>::DcachePort::recvStatusChange(Status status)
 
 template <class Impl>
 bool
-LSQ<Impl>::DcachePort::recvTiming(PacketPtr pkt)
+O3liteLSQ<Impl>::DcachePort::recvTiming(PacketPtr pkt)
 {
     if (pkt->isError())
         DPRINTF(LSQ, "Got error packet back for address: %#X\n", pkt->getAddr());
@@ -99,7 +99,7 @@ LSQ<Impl>::DcachePort::recvTiming(PacketPtr pkt)
 
 template <class Impl>
 void
-LSQ<Impl>::DcachePort::recvRetry()
+O3liteLSQ<Impl>::DcachePort::recvRetry()
 {
     if (lsq->retryTid == -1)
     {
@@ -114,7 +114,7 @@ LSQ<Impl>::DcachePort::recvRetry()
 }
 
 template <class Impl>
-LSQ<Impl>::LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params)
+O3liteLSQ<Impl>::O3liteLSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3liteCPUParams *params)
     : cpu(cpu_ptr), iewStage(iew_ptr), dcachePort(this),
       LQEntries(params->LQEntries),
       SQEntries(params->SQEntries),
@@ -181,7 +181,7 @@ LSQ<Impl>::LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params)
     //Initialize LSQs
     for (ThreadID tid = 0; tid < numThreads; tid++) {
         thread[tid].init(cpu, iew_ptr, params, this,
-                         maxLQEntries, maxSQEntries, 
+                         maxLQEntries, maxSQEntries,
                          maxMATEntries, maxSBEntries, tid);
         thread[tid].setDcachePort(&dcachePort);
     }
@@ -190,14 +190,14 @@ LSQ<Impl>::LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params)
 
 template<class Impl>
 std::string
-LSQ<Impl>::name() const
+O3liteLSQ<Impl>::name() const
 {
     return iewStage->name() + ".lsq";
 }
 
 template<class Impl>
 void
-LSQ<Impl>::regStats()
+O3liteLSQ<Impl>::regStats()
 {
     //Initialize LSQs
     for (ThreadID tid = 0; tid < numThreads; tid++) {
@@ -207,7 +207,7 @@ LSQ<Impl>::regStats()
 
 template<class Impl>
 void
-LSQ<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
+O3liteLSQ<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
 {
     activeThreads = at_ptr;
     assert(activeThreads != 0);
@@ -215,7 +215,7 @@ LSQ<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
 
 template <class Impl>
 void
-LSQ<Impl>::switchOut()
+O3liteLSQ<Impl>::switchOut()
 {
     for (ThreadID tid = 0; tid < numThreads; tid++) {
         thread[tid].switchOut();
@@ -224,7 +224,7 @@ LSQ<Impl>::switchOut()
 
 template <class Impl>
 void
-LSQ<Impl>::takeOverFrom()
+O3liteLSQ<Impl>::takeOverFrom()
 {
     for (ThreadID tid = 0; tid < numThreads; tid++) {
         thread[tid].takeOverFrom();
@@ -233,7 +233,7 @@ LSQ<Impl>::takeOverFrom()
 
 template <class Impl>
 int
-LSQ<Impl>::entryAmount(ThreadID num_threads)
+O3liteLSQ<Impl>::entryAmount(ThreadID num_threads)
 {
     if (lsqPolicy == Partitioned) {
         return LQEntries / num_threads;
@@ -244,7 +244,7 @@ LSQ<Impl>::entryAmount(ThreadID num_threads)
 
 template <class Impl>
 void
-LSQ<Impl>::resetEntries()
+O3liteLSQ<Impl>::resetEntries()
 {
     if (lsqPolicy != Dynamic || numThreads > 1) {
         int active_threads = activeThreads->size();
@@ -272,7 +272,7 @@ LSQ<Impl>::resetEntries()
 
 template<class Impl>
 void
-LSQ<Impl>::removeEntries(ThreadID tid)
+O3liteLSQ<Impl>::removeEntries(ThreadID tid)
 {
     thread[tid].clearLQ();
     thread[tid].clearSQ();
@@ -281,7 +281,7 @@ LSQ<Impl>::removeEntries(ThreadID tid)
 
 template<class Impl>
 void
-LSQ<Impl>::resizeEntries(unsigned size, ThreadID tid)
+O3liteLSQ<Impl>::resizeEntries(unsigned size, ThreadID tid)
 {
     thread[tid].resizeLQ(size);
     thread[tid].resizeSQ(size);
@@ -290,7 +290,7 @@ LSQ<Impl>::resizeEntries(unsigned size, ThreadID tid)
 
 template<class Impl>
 void
-LSQ<Impl>::tick()
+O3liteLSQ<Impl>::tick()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -304,7 +304,7 @@ LSQ<Impl>::tick()
 
 template<class Impl>
 void
-LSQ<Impl>::insertLoad(DynInstPtr &load_inst)
+O3liteLSQ<Impl>::insertLoad(DynInstPtr &load_inst)
 {
     ThreadID tid = load_inst->threadNumber;
 
@@ -313,7 +313,7 @@ LSQ<Impl>::insertLoad(DynInstPtr &load_inst)
 
 template<class Impl>
 void
-LSQ<Impl>::insertStore(DynInstPtr &store_inst)
+O3liteLSQ<Impl>::insertStore(DynInstPtr &store_inst)
 {
     ThreadID tid = store_inst->threadNumber;
 
@@ -322,7 +322,7 @@ LSQ<Impl>::insertStore(DynInstPtr &store_inst)
 
 template<class Impl>
 Fault
-LSQ<Impl>::executeLoad(DynInstPtr &inst)
+O3liteLSQ<Impl>::executeLoad(DynInstPtr &inst)
 {
     ThreadID tid = inst->threadNumber;
 
@@ -331,7 +331,7 @@ LSQ<Impl>::executeLoad(DynInstPtr &inst)
 
 template<class Impl>
 Fault
-LSQ<Impl>::executeStore(DynInstPtr &inst)
+O3liteLSQ<Impl>::executeStore(DynInstPtr &inst)
 {
     ThreadID tid = inst->threadNumber;
 
@@ -340,7 +340,7 @@ LSQ<Impl>::executeStore(DynInstPtr &inst)
 
 template<class Impl>
 void
-LSQ<Impl>::writebackStores()
+O3liteLSQ<Impl>::writebackStores()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -359,7 +359,7 @@ LSQ<Impl>::writebackStores()
 
 template<class Impl>
 bool
-LSQ<Impl>::violation()
+O3liteLSQ<Impl>::violation()
 {
     /* Answers: Does Anybody Have a Violation?*/
     list<ThreadID>::iterator threads = activeThreads->begin();
@@ -377,7 +377,7 @@ LSQ<Impl>::violation()
 
 template<class Impl>
 int
-LSQ<Impl>::getCount()
+O3liteLSQ<Impl>::getCount()
 {
     unsigned total = 0;
 
@@ -395,7 +395,7 @@ LSQ<Impl>::getCount()
 
 template<class Impl>
 int
-LSQ<Impl>::numLoads()
+O3liteLSQ<Impl>::numLoads()
 {
     unsigned total = 0;
 
@@ -413,7 +413,7 @@ LSQ<Impl>::numLoads()
 
 template<class Impl>
 int
-LSQ<Impl>::numStores()
+O3liteLSQ<Impl>::numStores()
 {
     unsigned total = 0;
 
@@ -431,7 +431,7 @@ LSQ<Impl>::numStores()
 
 template<class Impl>
 int
-LSQ<Impl>::numLoadsReady()
+O3liteLSQ<Impl>::numLoadsReady()
 {
     unsigned total = 0;
 
@@ -449,7 +449,7 @@ LSQ<Impl>::numLoadsReady()
 
 template<class Impl>
 unsigned
-LSQ<Impl>::numFreeEntries()
+O3liteLSQ<Impl>::numFreeEntries()
 {
     unsigned total = 0;
 
@@ -467,7 +467,7 @@ LSQ<Impl>::numFreeEntries()
 
 template<class Impl>
 unsigned
-LSQ<Impl>::numFreeEntries(ThreadID tid)
+O3liteLSQ<Impl>::numFreeEntries(ThreadID tid)
 {
     //if (lsqPolicy == Dynamic)
     //return numFreeEntries();
@@ -477,7 +477,7 @@ LSQ<Impl>::numFreeEntries(ThreadID tid)
 
 template<class Impl>
 bool
-LSQ<Impl>::isFull()
+O3liteLSQ<Impl>::isFull()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -494,7 +494,7 @@ LSQ<Impl>::isFull()
 
 template<class Impl>
 bool
-LSQ<Impl>::isFull(ThreadID tid)
+O3liteLSQ<Impl>::isFull(ThreadID tid)
 {
     //@todo: Change to Calculate All Entries for
     //Dynamic Policy
@@ -506,7 +506,7 @@ LSQ<Impl>::isFull(ThreadID tid)
 
 template<class Impl>
 bool
-LSQ<Impl>::lqFull()
+O3liteLSQ<Impl>::lqFull()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -523,7 +523,7 @@ LSQ<Impl>::lqFull()
 
 template<class Impl>
 bool
-LSQ<Impl>::lqFull(ThreadID tid)
+O3liteLSQ<Impl>::lqFull(ThreadID tid)
 {
     //@todo: Change to Calculate All Entries for
     //Dynamic Policy
@@ -535,7 +535,7 @@ LSQ<Impl>::lqFull(ThreadID tid)
 
 template<class Impl>
 bool
-LSQ<Impl>::sqFull()
+O3liteLSQ<Impl>::sqFull()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -552,7 +552,7 @@ LSQ<Impl>::sqFull()
 
 template<class Impl>
 bool
-LSQ<Impl>::sqFull(ThreadID tid)
+O3liteLSQ<Impl>::sqFull(ThreadID tid)
 {
      //@todo: Change to Calculate All Entries for
     //Dynamic Policy
@@ -564,7 +564,7 @@ LSQ<Impl>::sqFull(ThreadID tid)
 
 template<class Impl>
 bool
-LSQ<Impl>::isStalled()
+O3liteLSQ<Impl>::isStalled()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -581,7 +581,7 @@ LSQ<Impl>::isStalled()
 
 template<class Impl>
 bool
-LSQ<Impl>::isStalled(ThreadID tid)
+O3liteLSQ<Impl>::isStalled(ThreadID tid)
 {
     if (lsqPolicy == Dynamic)
         return isStalled();
@@ -591,7 +591,7 @@ LSQ<Impl>::isStalled(ThreadID tid)
 
 template<class Impl>
 bool
-LSQ<Impl>::hasStoresToWB()
+O3liteLSQ<Impl>::hasStoresToWB()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -608,7 +608,7 @@ LSQ<Impl>::hasStoresToWB()
 
 template<class Impl>
 bool
-LSQ<Impl>::willWB()
+O3liteLSQ<Impl>::willWB()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -625,7 +625,7 @@ LSQ<Impl>::willWB()
 
 template<class Impl>
 void
-LSQ<Impl>::dumpInsts()
+O3liteLSQ<Impl>::dumpInsts()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -639,7 +639,7 @@ LSQ<Impl>::dumpInsts()
 
 template<class Impl>
 bool
-LSQ<Impl>::stBufFull()
+O3liteLSQ<Impl>::stBufFull()
 {
     list<ThreadID>::iterator threads = activeThreads->begin();
     list<ThreadID>::iterator end = activeThreads->end();
@@ -656,7 +656,7 @@ LSQ<Impl>::stBufFull()
 
 template<class Impl>
 bool
-LSQ<Impl>::stBufFull(ThreadID tid)
+O3liteLSQ<Impl>::stBufFull(ThreadID tid)
 {
     //@todo: Change to Calculate All Entries for
     //Dynamic Policy

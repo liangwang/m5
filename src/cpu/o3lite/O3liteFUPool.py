@@ -29,12 +29,12 @@
 from m5.SimObject import SimObject
 from m5.params import *
 from FuncUnit import *
-from FuncUnitConfig import *
+from O3liteFuncUnitConfig import *
 
-class FUPool(SimObject):
-    type = 'FUPool'
+class O3liteFUPool(SimObject):
+    type = 'O3liteFUPool'
     FUList = VectorParam.FUDesc("list of FU's for this pool")
 
-class DefaultFUPool(FUPool):
+class DefaultO3liteFUPool(O3liteFUPool):
     FUList = [ IntALU(), IntMultDiv(), FP_ALU(), FP_MultDiv(), ReadPort(),
                WritePort(), RdWrPort(), IprPort() ]

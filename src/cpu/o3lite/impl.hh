@@ -28,20 +28,24 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3lite_IMPL_HH__
-#define __CPU_O3lite_IMPL_HH__
+#ifndef __CPU_O3LITE_IMPL_HH__
+#define __CPU_O3LITE_IMPL_HH__
 
 #include "arch/isa_traits.hh"
 #include "config/the_isa.hh"
 #include "cpu/o3lite/cpu_policy.hh"
+#include "cpu/o3lite/dep_graph.hh"
 
 
 // Forward declarations.
 template <class Impl>
-class BaseO3DynInst;
+class BaseO3liteDynInst;
 
 template <class Impl>
 class FullO3liteCPU;
+
+template <class DynInstPtr>
+class O3liteDependencyGraph;
 
 /** Implementation specific struct that defines several key types to the
  *  CPU, the stages within the CPU, the time buffers, and the DynInst.
@@ -57,10 +61,10 @@ struct O3liteCPUImpl
     typedef TheISA::MachInst MachInst;
 
     /** The CPU policy to be used, which defines all of the CPU stages. */
-    typedef SimpleCPUPolicy<O3liteCPUImpl> CPUPol;
+    typedef O3liteCPUPolicy<O3liteCPUImpl> CPUPol;
 
     /** The DynInst type to be used. */
-    typedef BaseO3DynInst<O3liteCPUImpl> DynInst;
+    typedef BaseO3liteDynInst<O3liteCPUImpl> DynInst;
 
     /** The refcounted DynInst pointer to be used.  In most cases this is
      *  what should be used, and not DynInst *.
@@ -68,7 +72,10 @@ struct O3liteCPUImpl
     typedef RefCountingPtr<DynInst> DynInstPtr;
 
     /** The O3CPU type to be used. */
-    typedef O3liteCPU<O3liteCPUImpl> O3CPU;
+    typedef FullO3liteCPU<O3liteCPUImpl> O3CPU;
+
+    typedef O3liteFUPool FUPool;
+    typedef O3liteDependencyGraph<DynInstPtr> DependencyGraph;
 
     /** Same typedef, but for CPUType.  BaseDynInst may not always use
      * an O3 CPU, so it's clearer to call it CPUType instead in that
@@ -83,4 +90,4 @@ struct O3liteCPUImpl
     };
 };
 
-#endif // __CPU_O3lite_IMPL_HH__
+#endif // __CPU_O3LITE_IMPL_HH__

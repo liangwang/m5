@@ -28,8 +28,8 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3_MEM_DEP_UNIT_HH__
-#define __CPU_O3_MEM_DEP_UNIT_HH__
+#ifndef __CPU_O3LITE_MEM_DEP_UNIT_HH__
+#define __CPU_O3LITE_MEM_DEP_UNIT_HH__
 
 #include <list>
 #include <set>
@@ -39,7 +39,7 @@
 #include "base/statistics.hh"
 #include "cpu/inst_seq.hh"
 
-struct SNHash {
+struct SNHash2 {
     size_t operator() (const InstSeqNum &seq_num) const {
         unsigned a = (unsigned)seq_num;
         unsigned hash = (((a >> 14) ^ ((a >> 2) & 0xffff))) & 0x7FFFFFFF;
@@ -48,10 +48,10 @@ struct SNHash {
     }
 };
 
-class DerivO3CPUParams;
+class DerivO3liteCPUParams;
 
 template <class Impl>
-class InstructionQueue;
+class O3liteInstructionQueue;
 
 /**
  * Memory dependency unit class.  This holds the memory dependence predictor.
@@ -65,7 +65,7 @@ class InstructionQueue;
  * dependence prediction schemes.
  */
 template <class MemDepPred, class Impl>
-class MemDepUnit
+class O3liteMemDepUnit
 {
   protected:
     std::string _name;
@@ -73,20 +73,22 @@ class MemDepUnit
   public:
     typedef typename Impl::DynInstPtr DynInstPtr;
 
-    /** Empty constructor. Must call init() prior to using in this case. */
-    MemDepUnit();
+    typedef typename Impl::CPUPol::IQ IQ;
 
-    /** Constructs a MemDepUnit with given parameters. */
-    MemDepUnit(DerivO3CPUParams *params);
+    /** Empty constructor. Must call init() prior to using in this case. */
+    O3liteMemDepUnit();
+
+    /** Constructs a O3liteMemDepUnit with given parameters. */
+    O3liteMemDepUnit(DerivO3liteCPUParams *params);
 
     /** Frees up any memory allocated. */
-    ~MemDepUnit();
+    ~O3liteMemDepUnit();
 
     /** Returns the name of the memory dependence unit. */
     std::string name() const { return _name; }
 
     /** Initializes the unit with parameters and a thread id. */
-    void init(DerivO3CPUParams *params, ThreadID tid);
+    void init(DerivO3liteCPUParams *params, ThreadID tid);
 
     /** Registers statistics. */
     void regStats();
@@ -98,7 +100,7 @@ class MemDepUnit
     void takeOverFrom();
 
     /** Sets the pointer to the IQ. */
-    void setIQ(InstructionQueue<Impl> *iq_ptr);
+    void setIQ(IQ *iq_ptr);
 
     /** Inserts a memory instruction. */
     void insert(DynInstPtr &inst);
@@ -221,7 +223,7 @@ class MemDepUnit
     /** Moves an entry to the ready list. */
     inline void moveToReady(MemDepEntryPtr &ready_inst_entry);
 
-    typedef m5::hash_map<InstSeqNum, MemDepEntryPtr, SNHash> MemDepHash;
+    typedef m5::hash_map<InstSeqNum, MemDepEntryPtr, SNHash2> MemDepHash;
 
     typedef typename MemDepHash::iterator MemDepHashIt;
 
@@ -251,7 +253,7 @@ class MemDepUnit
     InstSeqNum storeBarrierSN;
 
     /** Pointer to the IQ. */
-    InstructionQueue<Impl> *iqPtr;
+    IQ *iqPtr;
 
     /** The thread id of this memory dependence unit. */
     int id;
@@ -266,4 +268,4 @@ class MemDepUnit
     Stats::Scalar conflictingStores;
 };
 
-#endif // __CPU_O3_MEM_DEP_UNIT_HH__
+#endif // __CPU_O3LITE_MEM_DEP_UNIT_HH__

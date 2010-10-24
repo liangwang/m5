@@ -29,8 +29,8 @@
  *          Korey Sewell
  */
 
-#ifndef __CPU_O3_LSQ_UNIT_HH__
-#define __CPU_O3_LSQ_UNIT_HH__
+#ifndef __CPU_O3LITE_LSQ_UNIT_HH__
+#define __CPU_O3LITE_LSQ_UNIT_HH__
 
 #include <algorithm>
 #include <cstring>
@@ -47,13 +47,13 @@
 #include "mem/packet.hh"
 #include "mem/port.hh"
 
-class DerivO3CPUParams;
+class DerivO3liteCPUParams;
 
 /**
  * Class that implements the actual LQ and SQ for each specific
  * thread.  Both are circular queues; load entries are freed upon
  * committing, while store entries are freed once they writeback. The
- * LSQUnit tracks if there are memory ordering violations, and also
+ * O3liteLSQUnit tracks if there are memory ordering violations, and also
  * detects partial load to store forwarding cases (a store only has
  * part of a load's data) that requires the load to wait until the
  * store writes back. In the former case it holds onto the instruction
@@ -62,7 +62,7 @@ class DerivO3CPUParams;
  * replayed.
  */
 template <class Impl>
-class LSQUnit {
+class O3liteLSQUnit {
   protected:
     typedef TheISA::IntReg IntReg;
   public:
@@ -74,10 +74,10 @@ class LSQUnit {
 
   public:
     /** Constructs an LSQ unit. init() must be called prior to use. */
-    LSQUnit();
+    O3liteLSQUnit();
 
     /** Initializes the LSQ unit with the specified number of entries. */
-    void init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
+    void init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3liteCPUParams *params,
             LSQ *lsq_ptr, unsigned maxLQEntries, unsigned maxSQEntries,
             unsigned maxMATEntries, unsigned maxSBEntries, unsigned id);
 
@@ -208,7 +208,7 @@ class LSQUnit {
     bool sqFull() { return stores >= (SQEntries - 1); }
 
     /** Returns if the store buffer is full. */
-    bool stBufFull() { return storesToWB >= SBEntries; } 
+    bool stBufFull() { return storesToWB >= SBEntries; }
 
     /** Returns the number of instructions in the LSQ. */
     unsigned getCount() { return loads + stores; }
@@ -313,7 +313,7 @@ class LSQUnit {
     class WritebackEvent : public Event {
       public:
         /** Constructs a writeback event. */
-        WritebackEvent(DynInstPtr &_inst, PacketPtr pkt, LSQUnit *lsq_ptr);
+        WritebackEvent(DynInstPtr &_inst, PacketPtr pkt, O3liteLSQUnit *lsq_ptr);
 
         /** Processes the writeback event. */
         void process();
@@ -329,7 +329,7 @@ class LSQUnit {
         PacketPtr pkt;
 
         /** The pointer to the LSQ unit that issued the store. */
-        LSQUnit<Impl> *lsqPtr;
+        O3liteLSQUnit<Impl> *lsqPtr;
     };
 
   public:
@@ -393,7 +393,7 @@ class LSQUnit {
 
 
   private:
-    /** The LSQUnit thread id. */
+    /** The O3liteLSQUnit thread id. */
     ThreadID lsqID;
 
     /** The store queue. */
@@ -572,7 +572,7 @@ class LSQUnit {
 template <class Impl>
 template <class T>
 Fault
-LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
+O3liteLSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
                     T &data, int load_idx)
 {
     DynInstPtr load_inst = loadQueue[load_idx];
@@ -868,7 +868,7 @@ LSQUnit<Impl>::read(Request *req, Request *sreqLow, Request *sreqHigh,
 template <class Impl>
 template <class T>
 Fault
-LSQUnit<Impl>::write(Request *req, Request *sreqLow, Request *sreqHigh,
+O3liteLSQUnit<Impl>::write(Request *req, Request *sreqLow, Request *sreqHigh,
                      T &data, int store_idx)
 {
     assert(storeQueue[store_idx].inst);

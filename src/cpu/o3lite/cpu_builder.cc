@@ -36,11 +36,11 @@
 #include "cpu/o3lite/impl.hh"
 #include "params/DerivO3liteCPU.hh"
 
-class DerivO3liteCPU : public FullO3liteCPU<O3CPUImpl>
+class DerivO3liteCPU : public FullO3liteCPU<O3liteCPUImpl>
 {
   public:
     DerivO3liteCPU(DerivO3liteCPUParams *p)
-        : FullO3liteCPU<O3CPUImpl>(p)
+        : FullO3liteCPU<O3liteCPUImpl>(p)
     { }
 };
 

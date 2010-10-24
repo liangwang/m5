@@ -28,25 +28,25 @@
  * Authors: Kevin Lim
  */
 
-#ifndef __CPU_O3lite_CPU_POLICY_HH__
-#define __CPU_O3lite_CPU_POLICY_HH__
+#ifndef __CPU_O3LITE_CPU_POLICY_HH__
+#define __CPU_O3LITE_CPU_POLICY_HH__
 
-#include "cpu/o3/bpred_unit.hh"
-#include "cpu/o3/free_list.hh"
+#include "cpu/o3lite/bpred_unit.hh"
+#include "cpu/o3lite/free_list.hh"
 #include "cpu/o3lite/inst_queue.hh"
 #include "cpu/o3lite/lsq.hh"
 #include "cpu/o3lite/lsq_unit.hh"
 #include "cpu/o3lite/mem_dep_unit.hh"
-#include "cpu/o3/regfile.hh"
-#include "cpu/o3/rename_map.hh"
-#include "cpu/o3/rob.hh"
-#include "cpu/o3/store_set.hh"
+#include "cpu/o3lite/regfile.hh"
+#include "cpu/o3lite/rename_map.hh"
+#include "cpu/o3lite/rob.hh"
+#include "cpu/o3lite/store_set.hh"
 
-#include "cpu/o3/commit.hh"
-#include "cpu/o3/decode.hh"
-#include "cpu/o3/fetch.hh"
+#include "cpu/o3lite/commit.hh"
+#include "cpu/o3lite/decode.hh"
+#include "cpu/o3lite/fetch.hh"
 #include "cpu/o3lite/iew.hh"
-#include "cpu/o3/rename.hh"
+#include "cpu/o3lite/rename.hh"
 
 #include "cpu/o3lite/comm.hh"
 
@@ -65,55 +65,57 @@ struct O3liteCPUPolicy
     /** Typedef for the branch prediction unit (which includes the BP,
      * RAS, and BTB).
      */
-    typedef ::BPredUnit<Impl> BPredUnit;
+    typedef ::O3liteBPredUnit<Impl> BPredUnit;
     /** Typedef for the register file.  Most classes assume a unified
      * physical register file.
      */
-    typedef PhysRegFile<Impl> RegFile;
+    typedef O3litePhysRegFile<Impl> RegFile;
     /** Typedef for the freelist of registers. */
-    typedef SimpleFreeList FreeList;
+    typedef O3liteFreeList FreeList;
     /** Typedef for the rename map. */
-    typedef SimpleRenameMap RenameMap;
+    typedef O3liteRenameMap RenameMap;
     /** Typedef for the ROB. */
-    typedef ::ROB<Impl> ROB;
+    typedef ::O3liteROB<Impl> ROB;
     /** Typedef for the instruction queue/scheduler. */
     typedef O3liteInstructionQueue<Impl> IQ;
     /** Typedef for the memory dependence unit. */
-    typedef ::O3liteMemDepUnit<StoreSet, Impl> MemDepUnit;
+    typedef ::O3liteMemDepUnit<O3liteStoreSet, Impl> MemDepUnit;
     /** Typedef for the LSQ. */
     typedef ::O3liteLSQ<Impl> LSQ;
     /** Typedef for the thread-specific LSQ units. */
     typedef ::O3liteLSQUnit<Impl> LSQUnit;
 
+    typedef ::O3liteScoreboard Scoreboard;
+
     /** Typedef for fetch. */
-    typedef DefaultFetch<Impl> Fetch;
+    typedef O3liteFetch<Impl> Fetch;
     /** Typedef for decode. */
-    typedef DefaultDecode<Impl> Decode;
+    typedef O3liteDecode<Impl> Decode;
     /** Typedef for rename. */
-    typedef DefaultRename<Impl> Rename;
+    typedef O3liteRename<Impl> Rename;
     /** Typedef for Issue/Execute/Writeback. */
     typedef O3liteIEW<Impl> IEW;
     /** Typedef for commit. */
     typedef O3liteCommit<Impl> Commit;
 
     /** The struct for communication between fetch and decode. */
-    typedef DefaultFetchDefaultDecode<Impl> FetchStruct;
+    typedef O3liteFetchDefaultDecode<Impl> FetchStruct;
 
     /** The struct for communication between decode and rename. */
-    typedef DefaultDecodeDefaultRename<Impl> DecodeStruct;
+    typedef O3liteDecodeDefaultRename<Impl> DecodeStruct;
 
     /** The struct for communication between rename and IEW. */
-    typedef DefaultRenameDefaultIEW<Impl> RenameStruct;
+    typedef O3liteRenameDefaultIEW<Impl> RenameStruct;
 
     /** The struct for communication between IEW and commit. */
-    typedef DefaultIEWDefaultCommit<Impl> IEWStruct;
+    typedef O3liteIEWDefaultCommit<Impl> IEWStruct;
 
     /** The struct for communication within the IEW stage. */
-    typedef ::IssueStruct<Impl> IssueStruct;
+    typedef ::O3liteIssueStruct<Impl> IssueStruct;
 
     /** The struct for all backwards communication. */
     typedef O3liteTimeBufStruct<Impl> TimeStruct;
 
 };
 
-#endif //__CPU_O3lite_CPU_POLICY_HH__
+#endif //__CPU_O3LITE_CPU_POLICY_HH__

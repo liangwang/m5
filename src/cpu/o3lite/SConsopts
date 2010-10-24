@@ -31,6 +31,6 @@
 Import('*')
 
 CpuModel('O3liteCPU', 'o3lite_cpu_exec.cc',
-         '#include "cpu/o3/isa_specific.hh"',
+         '#include "cpu/o3lite/isa_specific.hh"',
          { 'CPU_exec_context': 'O3liteDynInst' },
          default=True)

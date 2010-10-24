@@ -29,9 +29,9 @@
  *          Korey Sewell
  */
 
-#include "cpu/o3/isa_specific.hh"
-#include "cpu/o3/lsq_unit_impl.hh"
+#include "cpu/o3lite/isa_specific.hh"
+#include "cpu/o3lite/lsq_unit_impl.hh"
 
 // Force the instantiation of LDSTQ for all the implementations we care about.
-template class LSQUnit<O3CPUImpl>;
+template class O3liteLSQUnit<O3liteCPUImpl>;
 

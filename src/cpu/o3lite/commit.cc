@@ -28,7 +28,7 @@
  * Authors: Kevin Lim
  */
 
-#include "cpu/o3/isa_specific.hh"
+#include "cpu/o3lite/isa_specific.hh"
 #include "cpu/o3lite/commit_impl.hh"
 
 template class O3liteCommit<O3liteCPUImpl>;

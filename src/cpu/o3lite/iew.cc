@@ -28,7 +28,7 @@
  * Authors: Kevin Lim
  */
 
-#include "cpu/o3/isa_specific.hh"
+#include "cpu/o3lite/isa_specific.hh"
 #include "cpu/o3lite/iew_impl.hh"
 #include "cpu/o3lite/inst_queue.hh"
 

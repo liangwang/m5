@@ -52,6 +52,7 @@
 #include "sim/system.hh"
 #include "sim/tlb.hh"
 
+//#include "cpu/o3lite/comm.hh"
 /**
  * @file
  * Defines a dynamic instruction context.
