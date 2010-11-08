@@ -14,7 +14,7 @@ parser.add_option("-b", "--benchmark",
                   help="Splash2 benchmark to run")
 
 # O3CPU options
-DEFAULT_WIDTH=4
+DEFAULT_WIDTH=2
 parser.add_option("--num-cpus", dest="num_cpus", type = "int",
         default = 1, help = 'number of cpus')
 parser.add_option('--numThreads', default=1, type='int',
@@ -23,9 +23,15 @@ parser.add_option("--MATEntries", dest="MATEntries", type="int",
         default = 32, help="Number of entries in MAT")
 
 parser.add_option("--LQEntries", dest="LQEntries", type="int",
-                  default=192, help="Number of entries in Load queue")
+                  default=64, help="Number of entries in Load queue")
 parser.add_option("--SQEntries", dest="SQEntries", type="int",
-                  default=192, help="Number of entries in Store queue")
+                  default=64, help="Number of entries in Store queue")
+parser.add_option("--SBEntries", dest="SBEntries", type="int",
+                  default=4, help="Number of entries in Store buffer")
+parser.add_option("--numROBEntries", dest="numROBEntries", type="int",
+                  default=64, help="Number of entries in ROB")
+parser.add_option("--numIQEntries", dest="numIQEntries", type="int",
+                  default=32, help="Number of entries in IQ")
 
 
 parser.add_option("--numSubscribers", type="int", default=2,
@@ -50,3 +56,8 @@ parser.add_option("--commitWidth", dest="commitWidth", type="int", default=DEFAU
         help="commit width")
 parser.add_option("--squashWidth", dest="squashWidth", type="int", default=DEFAULT_WIDTH,
         help="squash width")
+
+#EIO options
+parser.add_option("--eio", type="string", help="path to EIO file")
+parser.add_option("--chkpt", type="string", help="path to EIO checkpoint file")
+parser.add_option("--simlen", type="int", default="1000", help="length of EIO simulation")

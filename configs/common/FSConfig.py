@@ -44,7 +44,7 @@ class MemBus(Bus):
 def makeLinuxAlphaSystem(mem_mode, mdesc = None):
     class BaseTsunami(Tsunami):
         ethernet = NSGigE(pci_bus=0, pci_dev=1, pci_func=0)
-        ide = IdeController(disks=[Parent.disk0, Parent.disk2],
+        ide = IdeController(disks=[Parent.disk0, Parent.disk1, Parent.disk2],
                             pci_func=0, pci_dev=0, pci_bus=0)
 
     self = LinuxAlphaSystem()
@@ -60,8 +60,10 @@ def makeLinuxAlphaSystem(mem_mode, mdesc = None):
     self.bridge.side_b = self.membus.port
     self.physmem.port = self.membus.port
     self.disk0 = CowIdeDisk(driveID='master')
+    self.disk1 = CowIdeDisk(driveID='master')
     self.disk2 = CowIdeDisk(driveID='master')
     self.disk0.childImage(mdesc.disk())
+    self.disk1.childImage(disk('local.img'))
     self.disk2.childImage(disk('linux-bigswap2.img'))
     self.tsunami = BaseTsunami()
     self.tsunami.attachIO(self.iobus)
@@ -103,8 +105,10 @@ def makeLinuxAlphaRubySystem(mem_mode, mdesc = None):
     self.piobus.port = physmem.port
 
     self.disk0 = CowIdeDisk(driveID='master')
+    self.disk4 = CowIdeDisk(driveID='master')
     self.disk2 = CowIdeDisk(driveID='master')
     self.disk0.childImage(mdesc.disk())
+    self.disk4.childImage(disk('/localtmp/lw2aw/linux-1g.img'))
     self.disk2.childImage(disk('linux-bigswap2.img'))
     self.tsunami = BaseTsunami()
     self.tsunami.attachIO(self.piobus)
