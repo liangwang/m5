@@ -12,7 +12,7 @@ class FFT(LiveProcess):
     cwd = options.rootdir + '/kernels/fft'
     executable = options.rootdir + '/kernels/fft/FFT'
 #   cmd = ['FFT', '-p', str(options.num_cpus), '-m18']
-    cmd = ['FFT', '-p', str(options.num_cpus), '-m18']
+    cmd = ['FFT', '-p', str(options.num_cpus), '-m8']
 
 class LU_contig(LiveProcess):
     executable = options.rootdir + '/kernels/lu/contiguous_blocks/LU'

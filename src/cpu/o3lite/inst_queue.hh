@@ -515,6 +515,11 @@ class O3liteInstructionQueue
      **/
     bool completeProducer(DynInstPtr &inst);
 
+    /** check whether IQ is over-subscribed. */
+    // @TODO: make it thread awared.
+    bool isIQOversub(ThreadID tid);
+
+    void squashSubscribers(DynInstPtr& inst, ThreadID tid);
   private:
     /** Instruction sequence number of producers for each source operands for the
      *  over-subscribed instruction. */
@@ -534,6 +539,9 @@ class O3liteInstructionQueue
 
     /** Reset all data structures realted to subscription. */
     void resetAllSubscribers();
+
+    bool oversubStatus[Impl::MaxThreads];
+    
 };
 
 #endif //__CPU_O3LITE_INST_QUEUE_HH__

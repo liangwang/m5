@@ -116,8 +116,8 @@ class DerivO3liteCPU(BaseCPU):
 
     RASSize = Param.Unsigned(16, "RAS size")
 
-    LQEntries = Param.Unsigned(32, "Number of load queue entries")
-    SQEntries = Param.Unsigned(32, "Number of store queue entries")
+    LQEntries = Param.Unsigned(128, "Number of load queue entries")
+    SQEntries = Param.Unsigned(128, "Number of store queue entries")
     LFSTSize = Param.Unsigned(1024, "Last fetched store table size")
     SSITSize = Param.Unsigned(1024, "Store set ID table size")
 
@@ -127,7 +127,7 @@ class DerivO3liteCPU(BaseCPU):
     numPhysFloatRegs = Param.Unsigned(256, "Number of physical floating point "
                                       "registers")
     numIQEntries = Param.Unsigned(64, "Number of instruction queue entries")
-    numROBEntries = Param.Unsigned(192, "Number of reorder buffer entries")
+    numROBEntries = Param.Unsigned(128, "Number of reorder buffer entries")
 
     instShiftAmt = Param.Unsigned(2, "Number of bits to shift instructions by")
 

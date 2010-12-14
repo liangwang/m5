@@ -101,8 +101,13 @@ O3liteInstructionQueue<Impl>::O3liteInstructionQueue(O3CPU *cpu_ptr, IEW *iew_pt
 
     // begin o3lite
     maxSubscribers = params->numSubscribers;
-    numSubscribers.resize(numPhysRegs);
-    resetAllSubscribers();
+    // not used any more
+    // numSubscribers.resize(numPhysRegs);
+    for (ThreadID tid = 0; tid <numThreads; tid++) {
+        oversubStatus[tid] = false;
+        for (int sub_idx = 0; sub_idx < TheISA::MaxInstSrcRegs; sub_idx ++)
+          subProducers[tid][sub_idx] = 0;
+    }
     // end o3lite
 
     resetState();
@@ -918,14 +923,25 @@ O3liteInstructionQueue<Impl>::wakeDependents(DynInstPtr &completed_inst)
         DynInstPtr dep_inst = dependGraph.pop(dest_reg);
 
         while (dep_inst) {
-            DPRINTF(IQ, "Waking up a dependent instruction, PC%#x.\n",
-                    dep_inst->readPC());
+            DPRINTF(IQ, "Waking up a dependent instruction, PC %#x [sn:%lli].\n",
+                    dep_inst->readPC(), dep_inst->seqNum);
 
             // Might want to give more information to the instruction
             // so that it knows which of its source registers is
             // ready.  However that would mean that the dependency
             // graph entries would need to hold the src_reg_idx.
-            dep_inst->markSrcRegReady();
+            // dep_inst->markSrcRegReady();
+
+            // o3lite: check whether the source register are the same
+            int8_t total_src_regs = dep_inst->numSrcRegs();
+            for (int src_reg_idx = 0; 
+                 src_reg_idx < total_src_regs; 
+                 src_reg_idx ++) 
+            {
+                PhysRegIndex src_reg = dep_inst->renamedSrcRegIdx(src_reg_idx);
+                if (src_reg == dest_reg)
+                  dep_inst->markSrcRegReady();
+            }
 
             addIfReady(dep_inst);
 
@@ -939,8 +955,8 @@ O3liteInstructionQueue<Impl>::wakeDependents(DynInstPtr &completed_inst)
         assert(dependGraph.empty(dest_reg));
         dependGraph.clearInst(dest_reg);
 
-        // begin o3lite
-        numSubscribers[dest_reg]=0;
+        // begin o3lite !not used anymore
+        // numSubscribers[dest_reg]=0;
         // end o3lite
 
         // Mark the scoreboard as having that register ready.
@@ -1032,10 +1048,6 @@ O3liteInstructionQueue<Impl>::squash(ThreadID tid)
     // Also tell the memory dependence unit to squash.
     memDepUnit[tid].squash(squashedSeqNum[tid], tid);
 
-    // begin o3lite
-    // Reset all subscription structures.
-    resetAllSubscribers();
-    // end o3lite
 }
 
 template <class Impl>
@@ -1078,12 +1090,30 @@ O3liteInstructionQueue<Impl>::doSquash(ThreadID tid)
                 !squashed_inst->isMemBarrier() &&
                 !squashed_inst->isWriteBarrier()) {
 
+                PhysRegIndex src_reg_1 = 9999; // @todo: change to INVALID_REG_IDX
+                PhysRegIndex src_reg_2 = 9999;
                 for (int src_reg_idx = 0;
                      src_reg_idx < squashed_inst->numSrcRegs();
                      src_reg_idx++)
                 {
                     PhysRegIndex src_reg =
                         squashed_inst->renamedSrcRegIdx(src_reg_idx);
+
+                    // if two src registers have the same index, skip the second check
+                    if (src_reg_idx == 0) {
+                        // processing the first src reg.
+                        src_reg_1 = src_reg;
+                    } else if (src_reg_idx == 1) {
+                        // processing the second src reg.
+                        src_reg_2 = src_reg;
+                        if (src_reg == src_reg_1)
+                          continue;
+                    } else {
+                        // processing the third src reg. (assume at most 3)
+                        if (src_reg == src_reg_1 ||
+                            src_reg == src_reg_2)
+                          continue;
+                    }
 
                     // Only remove it from the dependency graph if it
                     // was placed there in the first place.
@@ -1120,6 +1150,7 @@ O3liteInstructionQueue<Impl>::doSquash(ThreadID tid)
             }
 
             // Might want to also clear out the head of the dependency graph.
+            
 
             // Mark it as squashed within the IQ.
             squashed_inst->setSquashedInIQ();
@@ -1136,6 +1167,16 @@ O3liteInstructionQueue<Impl>::doSquash(ThreadID tid)
             ++freeEntries;
         }
 
+        // o3lite: clear subProducer if needed
+        for (int sub_idx = 0; sub_idx < TheISA::MaxInstSrcRegs; sub_idx ++) {
+            if ( subProducers[tid][sub_idx] == squashed_inst->seqNum) {
+                subProducers[tid][sub_idx] = 0;
+                DPRINTF(IQ, "squash an oversub producer instruction PC %#x [sn:%lli]",
+                        squashed_inst->readPC(), squashed_inst->seqNum);
+                break;
+            }
+        }
+
         instList[tid].erase(squash_it--);
         ++iqSquashedInstsExamined;
     }
@@ -1149,6 +1190,9 @@ O3liteInstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
     // them to the dependency list if they are not ready.
     int8_t total_src_regs = new_inst->numSrcRegs();
     bool return_val = false;
+
+    PhysRegIndex src_reg_1 = 9999; //@todo: change "9999" to INVALID_REG_IDX
+    PhysRegIndex src_reg_2 = 9999;
 
     for (int src_reg_idx = 0;
          src_reg_idx < total_src_regs;
@@ -1168,6 +1212,22 @@ O3liteInstructionQueue<Impl>::addToDependents(DynInstPtr &new_inst)
                 DPRINTF(IQ, "Instruction PC %#x has src reg %i that "
                         "is being added to the dependency chain.\n",
                         new_inst->readPC(), src_reg);
+
+                // if two src registers have the same index, skip the second check
+                if (src_reg_idx == 0) {
+                    // processing the first src reg.
+                    src_reg_1 = src_reg;
+                } else if (src_reg_idx == 1) {
+                    // processing the second src reg.
+                    src_reg_2 = src_reg;
+                    if (src_reg == src_reg_1)
+                      continue;
+                } else {
+                    // processing the third src reg. (assume at most 3)
+                    if (src_reg == src_reg_1 ||
+                        src_reg == src_reg_2)
+                      continue;
+                }
 
                 dependGraph.insert(src_reg, new_inst);
 
@@ -1440,6 +1500,7 @@ O3liteInstructionQueue<Impl>::checkOversub(DynInstPtr &inst)
 
   int8_t total_src_regs = inst->numSrcRegs();
 
+#if 0
   DPRINTF(IQ, "Inst PC %#x, dest reg %i/%i, src reg1 %i/%i, src reg2 %i/%i\n",
           inst->readPC(),
           (inst->numDestRegs()>0)? inst->destRegIdx(0) : 9999,
@@ -1449,12 +1510,13 @@ O3liteInstructionQueue<Impl>::checkOversub(DynInstPtr &inst)
           (total_src_regs >= 2)? inst->srcRegIdx(1) : 9999,
           (total_src_regs >= 2)? inst->renamedSrcRegIdx(1) : 9999
   );
+#endif
 
 
-  // assert(total_src_regs <= 2); //cmoveq has three source registers???
+  // assert(total_src_regs <= 2); //cmoveq has three source registers
 
-  PhysRegIndex src_reg_1 = 0;
-  PhysRegIndex src_reg_2 = 0;
+  PhysRegIndex src_reg_1 = 9999; // @todo: change to INVALID_REG_IDX
+  PhysRegIndex src_reg_2 = 9999;
   for (int src_reg_idx = 0;
        src_reg_idx < total_src_regs;
        src_reg_idx++)
@@ -1488,24 +1550,30 @@ O3liteInstructionQueue<Impl>::checkOversub(DynInstPtr &inst)
           } else if (regScoreboard[src_reg] == false) {
 
               int numSubscribers = dependGraph.numOfDependents(src_reg);
+              if (numSubscribers > maxSubscribers) {
+                  DPRINTF(IQ, "Assertion failure: number of subscribers %d", numSubscribers);
+                  assert (false);
+              }
 
               if (numSubscribers == maxSubscribers){
                   DynInstPtr producer_inst= dependGraph.getProducer(src_reg);
                   InstSeqNum producer_seq = producer_inst->seqNum;
-                  int subIdx = 0;
+                  int sub_idx = 0;
                   bool assert_flag = false; // debug checking
-                  while (subIdx < TheISA::MaxInstSrcRegs) {
-                      if (subProducers[tid][subIdx] == 0) {
-                          subProducers[tid][subIdx] = producer_seq;
+                  while (sub_idx < TheISA::MaxInstSrcRegs) {
+                      if (subProducers[tid][sub_idx] == 0) {
+                          subProducers[tid][sub_idx] = producer_seq;
                           assert_flag=true;
                           break;
                       }
-                      subIdx ++;
+                      sub_idx ++;
                   }
 
                   assert(assert_flag); // should not have more than maxSrcRegs
 
                   return_val = true;
+
+                  subViolator[tid] = inst->seqNum;
 
                   DPRINTF(IQ, "over-subscription detected on Instruction PC %#x [sn:%lli], "
                           "src reg %i.\n",
@@ -1518,7 +1586,7 @@ O3liteInstructionQueue<Impl>::checkOversub(DynInstPtr &inst)
   return return_val;
 }
 
-
+#if 0  // not used
 template <class Impl>
 bool
 O3liteInstructionQueue<Impl>::isOverSubscriber(DynInstPtr &inst)
@@ -1539,7 +1607,7 @@ O3liteInstructionQueue<Impl>::isOverSubscriber(DynInstPtr &inst)
 
     return return_val;
 }
-
+#endif
 
 template <class Impl>
 bool
@@ -1567,6 +1635,8 @@ O3liteInstructionQueue<Impl>::completeProducer(DynInstPtr &inst)
   return true;
 }
 
+
+#if 0  // not used
 template <class Impl>
 void
 O3liteInstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
@@ -1620,7 +1690,9 @@ O3liteInstructionQueue<Impl>::addToSubscribers(DynInstPtr &new_inst)
       }
     }
 }
+#endif
 
+#if 0
 template <class Impl>
 void
 O3liteInstructionQueue<Impl>::resetAllSubscribers()
@@ -1637,6 +1709,36 @@ O3liteInstructionQueue<Impl>::resetAllSubscribers()
     for (ThreadID tid = 0; tid <numThreads; tid++) {
         for (int subIdx = 0; subIdx < TheISA::MaxInstSrcRegs; subIdx ++)
           subProducers[tid][subIdx] = 0;
+    }
+}
+#endif
+
+template <class Impl>
+bool
+O3liteInstructionQueue<Impl>::isIQOversub(ThreadID tid)
+{
+    int sub_idx = 0;
+    bool ret_val = false;
+    while (sub_idx < TheISA::MaxInstSrcRegs) {
+      if (subProducers[tid][sub_idx] != 0) {
+          ret_val = true;
+          break;
+      }
+      sub_idx ++;
+    }
+    return ret_val;
+}
+
+template <class Impl>
+void
+O3liteInstructionQueue<Impl>::squashSubscribers(DynInstPtr& inst, ThreadID tid)
+{
+    // o3lite: clear subViolator
+    if (inst->seqNum == subViolator[tid]) {
+        for (int sub_idx = 0; sub_idx < TheISA::MaxInstSrcRegs; sub_idx ++) {
+            subProducers[tid][sub_idx] = 0;
+        }
+        subViolator[tid] = 0;
     }
 }
 

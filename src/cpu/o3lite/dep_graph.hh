@@ -81,11 +81,17 @@ class O3liteDependencyGraph
 
     /** Sets the producing instruction of a given register. */
     void setInst(PhysRegIndex idx, DynInstPtr &new_inst)
-    { dependGraph[idx].inst = new_inst; }
+    { 
+      dependGraph[idx].inst = new_inst; 
+      numDependents[idx] = 0;
+    }
 
     /** Clears the producing instruction. */
     void clearInst(PhysRegIndex idx)
-    { dependGraph[idx].inst = NULL; }
+    { 
+      dependGraph[idx].inst = NULL; 
+      numDependents[idx] = 0;
+    }
 
     /** Removes an instruction from a single linked list. */
     void remove(PhysRegIndex idx, DynInstPtr &inst_to_remove);
@@ -177,10 +183,9 @@ O3liteDependencyGraph<DynInstPtr>::reset()
         }
 
         dependGraph[i].next = NULL;
-    }
 
-    numDependents.clear();
-    numDependents.resize(numEntries, 0);
+        numDependents[i] = 0;
+    }
 }
 
 template <class DynInstPtr>
@@ -257,9 +262,8 @@ O3liteDependencyGraph<DynInstPtr>::pop(PhysRegIndex idx)
         node->inst = NULL;
         memAllocCounter--;
         delete node;
+        numDependents[idx] --;
     }
-
-    numDependents[idx] --;
 
     return inst;
 }

@@ -148,6 +148,11 @@ O3liteIEW<Impl>::regStats()
         .name(name() + ".iewLSQFullEvents")
         .desc("Number of times the LSQ has become full, causing a stall");
 
+
+    iewIQOversubEvents
+        .name(name() + ".iewIQOversubEvents")
+        .desc("Number of times the IQ has become over-subscribed, causing a stall");
+
     memOrderViolationEvents
         .name(name() + ".memOrderViolationEvents")
         .desc("Number of memory order violations");
@@ -427,6 +432,7 @@ O3liteIEW<Impl>::squash(ThreadID tid)
     DPRINTF(IEW, "[tid:%i]: Removing skidbuffer instructions until [sn:%i].\n",
             tid, fromCommit->commitInfo[tid].doneSeqNum);
 
+
     while (!skidBuffer[tid].empty()) {
         if (skidBuffer[tid].front()->isLoad() ||
             skidBuffer[tid].front()->isStore() ) {
@@ -435,11 +441,18 @@ O3liteIEW<Impl>::squash(ThreadID tid)
 
         toRename->iewInfo[tid].dispatched++;
 
+        /* Instructions in skidBuffer may be some instruction's subscrivers
+         * or even be producers. Since all instructions in skidBuffer will be 
+         * squashed, they should be squashed from subscription structures.
+         */
+        DynInstPtr inst = skidBuffer[tid].front();
+        instQueue.squashSubscribers(inst, tid);
+
         skidBuffer[tid].pop();
     }
 
     // o3lite: clear over-sub flag.
-    oversubStatus[tid] = false;
+    // oversubStatus[tid] = instQueue.isIQOversub(tid);
 
     emptyRenameInsts(tid);
 }
@@ -1477,7 +1490,7 @@ O3liteIEW<Impl>::writebackInsts()
 
                     oversubStatus[tid] = false;
 
-                    unblock(tid);
+//                    unblock(tid);
                 }
             }
             // end o3lite

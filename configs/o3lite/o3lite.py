@@ -30,7 +30,7 @@ process = LiveProcess()
 process.executable = options.cmd
 process.cmd = [options.cmd] + options.options.split()
 
-system = System(cpu = [DerivO3CPU(cpu_id = i,
+system = System(cpu = [DerivO3liteCPU(cpu_id = i,
     clock = '2GHz',
     numThreads = options.numThreads,
     MATEntries = options.MATEntries,
