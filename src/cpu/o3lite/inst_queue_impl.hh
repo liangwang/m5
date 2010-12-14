@@ -934,9 +934,9 @@ O3liteInstructionQueue<Impl>::wakeDependents(DynInstPtr &completed_inst)
 
             // o3lite: check whether the source register are the same
             int8_t total_src_regs = dep_inst->numSrcRegs();
-            for (int src_reg_idx = 0; 
-                 src_reg_idx < total_src_regs; 
-                 src_reg_idx ++) 
+            for (int src_reg_idx = 0;
+                 src_reg_idx < total_src_regs;
+                 src_reg_idx ++)
             {
                 PhysRegIndex src_reg = dep_inst->renamedSrcRegIdx(src_reg_idx);
                 if (src_reg == dest_reg)
@@ -1150,7 +1150,7 @@ O3liteInstructionQueue<Impl>::doSquash(ThreadID tid)
             }
 
             // Might want to also clear out the head of the dependency graph.
-            
+
 
             // Mark it as squashed within the IQ.
             squashed_inst->setSquashedInIQ();

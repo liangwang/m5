@@ -541,7 +541,7 @@ class O3liteInstructionQueue
     void resetAllSubscribers();
 
     bool oversubStatus[Impl::MaxThreads];
-    
+
 };
 
 #endif //__CPU_O3LITE_INST_QUEUE_HH__
